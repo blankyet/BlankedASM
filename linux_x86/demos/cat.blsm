@@ -1,0 +1,50 @@
+
+; cat.blsm
+; Usage: ./cat filename
+
+.main
+    ; open(argv[1], O_RDONLY, 0)
+    mov rsp to rdi
+    add 0x10 to rdi
+    readv rdi to rdi
+
+    mov 0x00 to rsi
+    mov 0x00 to rdx
+    mov 0x02 to rax
+    syscall
+
+    ; Save fd in rbx
+    mov rax to rbx
+
+.loop_read
+    ; read(fd, buffer, 4096)
+    mov rbx to rdi
+    load .buffer
+    mov rax to rsi
+    mov 0x1000 to rdx
+    mov 0x00 to rax
+    syscall
+
+    mov 0x00 to rdx
+    cmp rax to rdx
+    jle .exit
+
+    mov rax to rcx
+
+    ; write(1, buffer, bytes_read)
+    mov 0x01 to rdi
+    load .buffer
+    mov rax to rsi
+    mov rcx to rdx
+    mov 0x01 to rax
+    syscall
+
+    jmp .loop_read
+
+.exit
+    mov 0x00 to rdi
+    mov 0x3C to rax
+    syscall
+
+.buffer
+    array 0x1000

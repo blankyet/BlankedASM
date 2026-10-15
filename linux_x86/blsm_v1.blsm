@@ -1,0 +1,2089 @@
+; 0x0123456789AFE
+; mov rax rcx rdx rbx
+
+sub 0x00100000 to rstack
+
+mov 0x00 to rdi
+; ----- ZERO STACK ----
+saveaddr rax
+mov rax to rcx 
+
+    mov rstack to rsi
+    add rdi to rsi
+    mov $labels to rax
+
+    mov 0x00 to rax
+    setv rax to rsi
+    add 0x01 to rdi
+    mov 0x00100000 to rax 
+    cmp rdi to rax
+jge 0x0A
+    mov rcx to rax
+    jmp rax
+; ----- ZERO STACK END----
+
+
+xor r15 to r15
+
+mark 0x000000C0 ; table for all token
+; first value are flags 1 - main keyword like mov/add/sycall 2 mask 3 fin value
+mem 0x000000000000003B ; ; 'key' 
+mem 0x00000000000000FF ; mask
+mem 0x9000000000000099 ; value '99'
+
+mem 0x000000000000203B ; ; 'key' 
+mem 0x000000000000FFFF ; mask
+mem 0x9000000000000099 ; value '99'
+
+mem 0x00000000706B7262 ; brkp 'key' 
+mem 0x00000000FFFFFFFF ; mask
+mem 0x9000000000000088 ; value '88'
+
+mem 0x0000000020766F6D ; mov 'key' 
+mem 0x00000000FFFFFFFF ; mask
+mem 0x1000000000000089 ; value '89'
+
+mem 0x0000207664616572 ; readv 'key' 
+mem 0x0000FFFFFFFFFFFF ; mask
+mem 0x1000000000000189 ; value '189'
+
+mem 0x0000002076746573 ; setv 'key' 
+mem 0x000000FFFFFFFFFF ; mask
+mem 0x1000000000000289 ; value '189'
+
+mem 0x0000000020646461 ; add 'key' 
+mem 0x00000000FFFFFFFF ; mask
+mem 0x1000000000000081 ; value '81'
+
+mem 0x0000000020726873 ; shr 'key' 
+mem 0x00000000FFFFFFFF ; mask
+mem 0x10000000000000C1 ; value '81'
+
+mem 0x00000000206C6873 ; shl 'key' 
+mem 0x00000000FFFFFFFF ; mask
+mem 0x10000000000001C1 ; value '81'
+
+
+mem 0x0000000020627573 ; sub 'key' 
+mem 0x00000000FFFFFFFF ; mask
+mem 0x1000000000000029 ; valu '21'
+
+mem 0x0000000020646E61 ; and 'key' 
+mem 0x00000000FFFFFFFF ; mask
+mem 0x1000000000000021 ; value '21'
+
+mem 0x0000000020706D63 ; cmp 'key' 
+mem 0x00000000FFFFFFFF ; mask
+mem 0x100000000000009C ; value '9C'
+
+mem 0x000000000020726F ; or 'key' 
+mem 0x0000000000FFFFFF ; mask
+mem 0x1000000000000009 ; value '21'
+
+mem 0x0000000020786172  ; "rax "
+mem 0x00000000FFFFFFFF ; mask
+mem 0x2000000000000000  ; ID=0, REX.B=0, REX.R=0 -> Value: 0x00
+mem 0x0000000020786372  ; "rcx "
+mem 0x00000000FFFFFFFF ; mask
+mem 0x2000000000000001  ; ID=1, REX.B=0, REX.R=0 -> Value: 0x01
+mem 0x0000000020786472  ; "rdx "
+mem 0x00000000FFFFFFFF ; mask
+mem 0x2000000000000002  ; ID=2, REX.B=0, REX.R=0 -> Value: 0x02
+mem 0x0000000020786272  ; "rbx "
+mem 0x00000000FFFFFFFF ; mask
+mem 0x2000000000000003  ; ID=3, REX.B=0, REX.R=0 -> Value: 0x03
+mem 0x0000000020707372  ; "rsp "
+mem 0x00000000FFFFFFFF  ; mask
+mem 0x2000000000000004  ; ID=4
+mem 0x0000000020706272  ; "rbp "
+mem 0x00000000FFFFFFFF  ; mask
+mem 0x2000000000000005  ; ID=5
+mem 0x0000000020697372  ; "rsi "
+mem 0x00000000FFFFFFFF  ; mask
+mem 0x2000000000000006  ; ID=6
+mem 0x0000000020696472  ; "rdi "
+mem 0x00000000FFFFFFFF  ; mask
+mem 0x2000000000000007  ; ID=7
+mem 0x000000000A786172  ; "rax\n"
+mem 0x00000000FFFFFFFF  ; mask
+mem 0x2000000000000000  ; ID=0
+mem 0x000000000A786372  ; "rcx\n"
+mem 0x00000000FFFFFFFF  ; mask
+mem 0x2000000000000001  ; ID=1
+
+mem 0x000000000A786472  ; "rdx\n"
+mem 0x00000000FFFFFFFF  ; mask
+mem 0x2000000000000002  ; ID=2
+
+mem 0x000000000A786272  ; "rbx\n"
+mem 0x00000000FFFFFFFF  ; mask
+mem 0x2000000000000003  ; ID=3
+
+mem 0x000000000A707372  ; "rsp\n"
+mem 0x00000000FFFFFFFF  ; mask
+mem 0x2000000000000004  ; ID=4
+
+mem 0x000000000A706272  ; "rbp\n"
+mem 0x00000000FFFFFFFF  ; mask
+mem 0x2000000000000005  ; ID=5
+
+mem 0x000000000A697372  ; "rsi\n"
+mem 0x00000000FFFFFFFF  ; mask
+mem 0x2000000000000006  ; ID=6
+
+mem 0x000000000A696472  ; "rdi\n"
+mem 0x00000000FFFFFFFF  ; mask
+mem 0x2000000000000007  ; ID=7
+
+mem 0x0000002068737570 ; "push "
+mem 0x000000FFFFFFFFFF ; mask
+mem 0x1000000000000050 ; 
+
+mem 0x0000000020706F70 ; "pop "
+mem 0x00000000FFFFFFFF ; mask
+mem 0x1000000000000058 ; 
+
+mem 0x006C6C6163737973 ; "syscall"
+mem 0x00FFFFFFFFFFFFFF ; mask
+mem 0x1000000000000003 ; type
+
+mem 0x000000000020656A ; "je "
+mem 0x0000000000FFFFFF ; mask
+mem 0x400000000000840F ; type
+
+mem 0x0000000000206C6A ; "jl "
+mem 0x0000000000FFFFFF ; mask
+mem 0x4000000000008C0F ; type
+
+mem 0x0000000020656E6A ; "jne "
+mem 0x00000000FFFFFFFF ; mask
+mem 0x400000000000850F ; type
+
+mem 0x0000000020706D6A ; "jmp "
+mem 0x00000000FFFFFFFF ; mask
+mem 0x400000000000E990 ; type
+
+mem 0x000000206C6C6163 ; "call "
+mem 0x000000FFFFFFFFFF ; mask
+mem 0x400000000000E890 ; type
+
+mem 0x0000002064616F6C ; "load "
+mem 0x000000FFFFFFFFFF ; mask
+mem 0x4000000000058D48 ; type
+
+mem 0x0000207961727261 ; "array "
+mem 0x0000FFFFFFFFFFFF ; mask
+mem 0x5000000000000000 ; type
+
+mem 0x00000000206D656D ; "mem "
+mem 0x00000000FFFFFFFF ; mask
+mem 0x5000000000000001 ; type
+
+mem 0x0000000020746572 ; "ret "
+mem 0x00000000FFFFFFFF ; mask
+mem 0x10000000000000C3 ; type
+
+mem 0x000000000A746572 ; "ret\n"
+mem 0x00000000FFFFFFFF ; mask
+mem 0x10000000000000C3 ; type
+
+
+mem 0xFFFFFFFFFFFFFFFF ; data end
+
+
+mark 0x00 ; programm start
+
+; "blsm_v2.blsm\0"
+mov16 0x000000006D736C62 to rax
+push rax
+mov16 0x2E32765F6D736C62 to rax
+push rax
+
+mov 0x02 to rax   ; sys_open
+mov rstack to rdi
+mov 0x00000000 to rsi  ; O_RDONLY
+syscall
+
+pop rsi
+pop rsi
+
+mov rstack to rsi
+add $file_descriptor to rsi
+setv rax to rsi
+
+mov 0x00 to rax
+set_var rax to 0x30
+
+mov 0x00 to rax
+set_var rax to 0x08 ; current size of tokens 0 tokens found
+
+mov 0x00 to rax
+set_var rax to 0x20 ; current len in out_buffer
+
+
+mov 0x00 to rax
+set_var rax to 0x80 ; is comment? bool
+
+
+; ------ READ_LOOP --------
+mark 0x30
+
+    mov 0x00 to rdi
+    ; ----- ZERO BUFFERS ----
+    mark 0x00000180
+        mov rstack to rsi
+        add $in_buffer to rsi
+        add rdi to rsi
+        mov 0x00 to rax
+        setv rax to rsi
+        add 0x01 to rdi
+        mov 0x40 to rax
+        cmp rdi to rax
+    jge 0x1B
+        jmp_mark 0x00000180
+    ; ----- ZERO BUFFERS END----
+
+
+    mov rstack to rsi
+    add $file_descriptor to rsi
+    readv rsi to rax
+    mov rax to rdi ; rdi = дескриптор файла (переносим обратно )
+
+    ; Assuming rdi already contains your file descriptor
+    ; Assuming rbx contains your 'overflow_len' variable value
+
+
+    read_var 0x30 to rax
+    mov 0x00 to rsi
+    sub rax to rsi
+    mov 0x01 to rdx             ; rdx = 1 (SEEK_CUR: from current position)
+    mov 0x08 to rax     ; rax = sys_lseek system call
+    syscall                 ; File pointer is now moved back!
+
+    mov 0x00 to rax   ; sys_read
+    mov rstack to rsi       ; rsi = адрес нашего буфера (текущий rstack)
+    add $in_buffer to rsi
+    mov 0x00000040 to rdx   ; rdx = сколько байт прочитать (64)
+
+    syscall                 ; Вызываем! Количество прочитанных байт вернулось в rax
+    test rax
+    jnz 0x1B
+        jmp_mark 0x20
+
+
+    mov 0x00 to rdi ; counter
+    sub 0x01 to rdi
+    ; ------ PARSE_LOOP --------
+    mark 0x40
+        add 0x01 to rdi
+
+        mov rstack to rsi
+        add $in_buffer to rsi
+        add rdi to rsi
+        readv rsi to rax
+    
+
+        ; ------ PARSE 0xNUMBER START-------
+        ; [78 30] [x 0]
+        ; rax = 0x7830203631766f6d
+        mov 0x00000000 to rdx ; save number here
+        mov16 0x0000000000007830 to rcx
+        mov16 0x000000000000FFFF to rbx
+        and rbx to rax
+        cmp rcx to rbx
+        je 0x1B
+            jmp_mark 0x60 ; jump over parsing
+        
+       
+        add 0x02 to rdi
+        mov 0x00 to rax
+
+        mark 0xA0
+            mov 0x40 to rax
+            cmp rdi to rax
+            jne 0x1B
+                jmp_mark 0x00000120 ; abandon partial number, let overflow handle it
+            mov rstack to rsi
+            add $in_buffer to rsi
+            add rdi to rsi
+            readv rsi to rax
+            
+            ; 0 1 2 3 4 5 6 7 8 9 in ascii 30 31 32 33 34 35 36 37 38 39
+            ; A B C D E F         in ascii 41 42 43 44 45 46
+            mov16 0x00000000000000FF to rbx
+            and rbx to rax
+            mov 0x20 to rcx  ; if char == "[space bar]"  
+            cmp rcx to rbx
+            jne 0x1B
+                jmp_mark 0x80 ; jump over parsing
+
+            mov 0x0A to rcx ; if char == "\n"  
+            cmp rcx to rbx
+            jne 0x1B
+                jmp_mark 0x80 ; jump over parsing
+
+            sub 0x30 to rbx
+            mov 0x0A to rcx
+            cmp rcx to rbx
+            jl 0x07
+                sub 0x07 to rbx
+
+            ; Aumulator = (Aumulator << 4) + new_digit
+            shiftl rdx by 0x04
+            
+            add rbx to rdx
+            add 0x01 to rdi
+
+
+        jmp_mark 0xA0
+
+        mark 0x80
+        ; here rdx is a the parsed number
+        read_var 0x08 to rax ; current token count
+
+        mov rstack to rsi
+        add $tokens to rsi
+        add rax to rsi
+
+        mov rdx to rax
+        setv rax to rsi ; token is saved
+        add 0x08 to rsi
+        mov16 0x3000000000000000 to rax
+        setv rax to rsi ; type is saved
+        read_var 0x08 to rax
+        add 0x10 to rax ; one toke was added
+        set_var rax to 0x08
+
+    mark 0x60
+        ; ------ PARSE 0xNUMBER END-------
+
+        ; ------ PARSE TOKENS START-------        
+        ; read table from 0xC0
+        mov rstack to rsi
+        add $labels to rsi
+        add 0x000000C0 to rsi   
+        readv rsi to rax
+        add 0x11 to rax ; skip marking but 0D
+        add 0x05 to rax ; skip skp
+        mov rax to rsi
+        set_var rax to 0x00
+        
+        mark 0x000000E0 ; mark losses rsi
+            read_var 0x00 to rax
+            mov rax to rsi
+            add 0x0D to rsi ; get to token
+            
+            readv rsi to rax ; next value  loaded
+            mov16 0xFFFFFFFFFFFFFFFF to rbx
+            cmp rax to rbx
+            jne 0x1B
+                jmp_mark 0x00000100
+            
+            mov rax to rcx ;is a token now
+
+            add 0x0D to rsi ; load mask
+            readv rsi to rax 
+            add 0x0D to rsi ; go to value for future
+            
+            mov rax to rbx ; mask in rbx
+
+            mov rsi to rax
+            set_var rax to 0x00
+
+            mov rstack to rsi
+            add $in_buffer to rsi
+            add rdi to rsi
+            readv rsi to rax ; reread buffer
+            and rbx to rax ; mask out input
+
+            read_var 0x00 to rax
+            mov rax to rsi
+            cmp rcx to rbx ; if token
+            je 0x1B
+                jmp_mark 0x000000E0
+            
+            readv rsi to rax ; rax `is a value we want to store in tokens
+            mov rax to rbx
+
+            mov rsi to rax
+            set_var rax to 0x00 ; save rsi to 0x00
+            
+            read_var 0x08 to rax ; current token count
+
+            mov rstack to rsi
+            add $tokens to rsi
+            add rax to rsi
+            setv rbx to rsi ; token is saved
+
+            mov rbx to rcx
+            mov16 0xFF00000000000000 to rbx ; get its type from first byte
+            and rcx to rbx
+
+
+            add 0x08 to rsi
+            setv rbx to rsi ; type is saved
+            add 0x10 to rax ; one toke was added
+            set_var rax to 0x08
+        
+        
+        mark 0x00000100
+        
+        ; ------ PARSE TOKENS END-------
+
+        ; ------ PARSE LABEL START -------
+        mov rstack to rsi
+        add $in_buffer to rsi
+        add rdi to rsi
+        readv rsi to rax ; reread buffer
+
+        mov16 0x000000000000002E to rcx
+        mov16 0x00000000000000FF to rbx
+        and rbx to rax
+        cmp rcx to rbx
+        je 0x1B ; if dot 
+            jmp_mark 0x00000440
+
+        read_var 0x08 to rax ; current token count
+        mov 0x00 to rbx
+        cmp rax to rbx
+        je 0x1B ; if token count != 0 maybe label in jump then
+            jmp_mark 0x00000440
+
+        ; read_label
+        jmp_mark 0x00000420
+
+        mark 0x00000440
+        ; ------ PARSE LABEL END -------
+
+        ; ------ PARSE JUMP LABEL START-------     
+        mov rstack to rsi
+        add $tokens to rsi
+        add 0x08 to rsi
+        readv rsi to rax
+        ; if jump register
+        mov rdi to rcx ; mov counter
+        mov16 0x4000000000000000 to rbx
+        cmp rax to rbx
+        je 0x1B
+            jmp_mark 0x00000320
+            
+            ; skip "je/jnz.." till next word
+            ; search for .
+            mov rstack to rsi
+            add $in_buffer to rsi
+            add rdi to rsi
+            readv rsi to rax 
+            
+            mov16 0x00000000000000FF to rbx
+            and rbx to rax
+            mov 0x2E to rcx  ; if char == "."  
+            cmp rcx to rbx
+            jne 0x1B
+                jmp_mark 0x00000420 ; jump to start reeding label
+
+            add 0x01 to rdi
+            add 0x01 to rsi
+            readv rsi to rax
+
+            mov16 0x00000000000000FF to rbx
+            and rbx to rax
+            mov 0x2E to rcx  ; if char == "."  
+            cmp rcx to rbx
+            jne 0x1B
+                jmp_mark 0x00000420 ; jump to start reeding label
+
+            add 0x01 to rdi
+            add 0x01 to rsi
+            readv rsi to rax
+
+            mov16 0x00000000000000FF to rbx
+            and rbx to rax
+            mov 0x2E to rcx  ; if char == "."
+            cmp rcx to rbx
+            jne 0x1B
+                jmp_mark 0x00000420 ; jump to start reeding label
+
+            add 0x01 to rdi
+            add 0x01 to rsi
+            readv rsi to rax
+
+            mov16 0x00000000000000FF to rbx
+            and rbx to rax
+            mov 0x2E to rcx  ; if char == "."
+            cmp rcx to rbx
+            jne 0x1B
+                jmp_mark 0x00000420 ; jump to start reeding label
+        
+            add 0x01 to rdi
+            add 0x01 to rsi
+            readv rsi to rax
+
+            mov16 0x00000000000000FF to rbx
+            and rbx to rax
+            mov 0x2E to rcx  ; if char == "."
+            cmp rcx to rbx
+            jne 0x1B
+                jmp_mark 0x00000420 ; jump to start reeding label
+        
+            add 0x01 to rdi
+            add 0x01 to rsi
+            readv rsi to rax
+
+            mov16 0x00000000000000FF to rbx
+            and rbx to rax
+            mov 0x2E to rcx  ; if char == "."
+            cmp rcx to rbx
+            jne 0x1B
+                jmp_mark 0x00000420 ; jump to start reeding label
+
+
+            ; if here something went wrong jmp is found but not label
+            jmp_mark 0x30 ; i hope this doesnt break anything
+
+            mov 0x3C to rax
+            mov 0x00000661 to rdi
+            syscall
+
+            mark 0x00000420 ; read label cycle
+            mov 0x00 to rax
+            set_var rax to 0x40 ; first word part
+            set_var rax to 0x48 ; second word part
+
+            mov rdi to rax
+            set_var rax to 0x60 ; inner counter
+
+
+            mark 0x00000360
+                read_var 0x60 to rax
+                mov rstack to rsi
+                add $in_buffer to rsi
+                add rax to rsi ; inner loop
+                readv rsi to rax 
+
+                mov16 0x00000000000000FF to rbx
+                and rbx to rax
+                mov 0x20 to rcx  ; if char == "[space bar]"  
+                cmp rcx to rbx
+                jne 0x1B
+                    jmp_mark 0x00000340 ; jump finish parsing
+
+                mov 0x0A to rcx ; if char == "\n"  
+                cmp rcx to rbx
+                jne 0x1B
+                    jmp_mark 0x00000340 ; jump finish parsing
+
+                read_var 0x60 to rax
+                mov rax to rcx
+                mov 0x40 to rax ; if buffer ended leave will get label with offset again
+                cmp rcx to rax
+                jne 0x27
+                    mov 0x40 to rdi
+                    jmp_mark 0x00000120 ; jump out
+
+            
+                read_var 0x60 to rax
+                mov rstack to rsi
+                add $in_buffer to rsi
+                add rax to rsi ; inner loop
+                readv rsi to rax 
+
+                read_var 0x60 to rax
+                sub rdi to rax
+                mov 0x07 to rcx
+
+                cmp rcx to rax
+                jle 0x1B
+                    jmp_mark 0x00000380
+                    read_var 0x60 to rax
+                    sub rdi to rax
+                    mov 0x01 to rcx
+                    shiftl rax by 0x03
+                    shiftl rcx by rax
+                    sub 0x01 to rcx
+
+                    ; less than 8 bytes
+                    mov rstack to rsi
+                    add $in_buffer to rsi
+                    add rdi to rsi 
+                    readv rsi to rax 
+
+                    and rax to rcx
+                    mov rcx to rax
+                    set_var rax to 0x40
+                    jmp_mark 0x00000400
+                mark 0x00000380
+                ; more than 8 bytes
+                    ; mask out 
+                    read_var 0x60 to rax
+                    sub rdi to rax
+                    sub 0x08 to rax
+                    mov 0x01 to rcx
+                    shiftl rax by 0x03
+                    shiftl rcx by rax
+                    sub 0x01 to rcx
+
+                    mov rstack to rsi
+                    add $in_buffer to rsi
+                    add rdi to rsi 
+                    add 0x08 to rsi
+                    readv rsi to rax 
+
+                    and rax to rcx
+                    mov rcx to rax
+                    set_var rax to 0x48
+                jmp_mark 0x00000400 ; jump back untill finished
+                
+                mark 0x00000400
+
+                read_var 0x60 to rax
+                add 0x01 to rax
+                set_var rax to 0x60
+            
+
+        jmp_mark 0x00000360 
+
+        mark 0x00000340
+            ; label completly read
+            ; save it here from to vars
+            read_var 0x60 to rax
+            mov rax to rdi
+            read_var 0x40 to rax
+            ;; but did we read it after jmp or not
+            mov rstack to rsi
+            add $tokens to rsi
+            add 0x08 to rsi
+            readv rsi to rax
+            ; if jump register
+            mov rdi to rcx ; mov counter
+            mov16 0x4000000000000000 to rbx
+            cmp rax to rbx
+        je 0x1B
+            jmp_mark 0x00000460
+            ; here if after JMP
+            ; we write to out_buffer zeros
+            ; and save jmp_map[pos] = "label"
+
+            mov rstack to rsi
+            add $jmp_map to rsi
+                readv rsi to rax ; current label count
+                add 0x18 to rax
+                setv rax to rsi
+            add rax to rsi
+            mov rsi to rax
+            mov rax to rcx
+            
+            read_var 0x40 to rax
+            
+            setv rax to rcx
+            add 0x08 to rcx
+            read_var 0x48 to rax
+            setv rax to rcx
+            add 0x08 to rcx
+
+            read_var 0x20 to rax ; current buffer len
+
+            setv rax to rcx
+
+
+            mov rstack to rsi
+            add $tokens to rsi
+            readv rsi to rax
+            ; if load
+            mov16 0x4000000000058D48 to rbx
+            cmp rax to rbx
+            je 0x1B
+                jmp_mark 0x00000410
+
+                read_var 0x20 to rax ; current buffer len
+                add 0x01 to rax
+                setv rax to rcx
+
+                jmp_mark 0x000001F0
+            mark 0x00000410
+                read_var 0x20 to rax ; current buffer len
+                setv rax to rcx
+            mark 0x000001F0
+
+  
+
+
+            mov rstack to rsi
+            add $tokens to rsi
+            readv rsi to rax
+
+            mov rax to rbx
+
+            read_var 0x20 to rax  ; cureent out_buffer len
+
+            mov rstack to rsi
+            add $out_buffer to rsi
+            add rax to rsi
+
+            mov rbx to rax
+            setv rax to rsi
+
+
+            mov rstack to rsi
+            add $tokens to rsi
+            readv rsi to rax
+            ; if load
+            mov16 0x4000000000058D48 to rbx
+            cmp rax to rbx
+            je 0x1B
+                jmp_mark 0x00000560
+
+                read_var 0x20 to rax ; cureent out_buffer len
+                add 0x03 to rax ; from opcode
+                add 0x04 to rax ; zeros placeholders
+                set_var rax to 0x20 
+
+                jmp_mark 0x00000580
+            mark 0x00000560
+                read_var 0x20 to rax ; cureent out_buffer len
+                add 0x02 to rax ; from opcode
+                add 0x04 to rax ; zeros placeholders
+                set_var rax to 0x20 
+            mark 0x00000580
+        
+            
+            ; ---- CLEAR TOKENS ---- 
+            read_var 0x08 to rax ; current token count
+            mov rstack to rsi
+            add $tokens to rsi
+            mov 0x00 to rax
+            setv rax to rsi ; clear first token
+            add 0x08 to rsi
+            setv rax to rsi 
+            
+            read_var 0x08 to rax ; cureent tokens size
+            mov 0x00 to rax
+            set_var rax to 0x08 
+            ;; EMIT jmp tokens with zeros for now
+            jmp_mark 0x00000320
+        mark 0x00000460
+
+            mov rstack to rsi
+            add $inrlbls to rsi
+                readv rsi to rax ; current label count
+                add 0x18 to rax
+                setv rax to rsi
+            add rax to rsi
+            mov rsi to rax
+            mov rax to rcx
+
+            read_var 0x40 to rax
+            setv rax to rcx
+            add 0x08 to rcx
+            read_var 0x48 to rax
+            setv rax to rcx
+            add 0x08 to rcx
+            read_var 0x20 to rax ; current buffer len
+            setv rax to rcx
+        ; here if its just label
+        ; and save inner_labels["label"] = pos
+        ; then at end
+        ; loop all [0...N] - inner_labels[jmp_map[0..N]] - its a relative jump 
+
+        ; TODO: add here save hex_pos and label
+
+        mark 0x00000320
+        ; ------ PARSE JUMP LABEL END-------    
+        
+        mov rstack to rsi
+        add $in_buffer to rsi
+        add rdi to rsi
+        readv rsi to rax ; reread buffer
+
+
+        mov16 0x000000000000000A to rcx
+        mov16 0x00000000000000FF to rbx
+        and rbx to rax
+        cmp rcx to rbx
+        je 0x1B
+            jmp_mark 0x00000120 ; jump over generating opcodes
+
+
+        ; ------ GENERATE OPCODES START ------
+                
+        ; if commment ;
+        mov16 0x9000000000000099 to rbx
+        cmp rbx to rax
+        jne 0x1B
+            jmp_mark 0x000003E0
+        
+
+        read_var 0x08 to rax ; current token count
+        mov rstack to rsi
+        add $tokens to rsi
+        readv rsi to rax
+        ; if pop
+        mov16 0x1000000000000058 to rbx
+        cmp rbx to rax
+        je 0x1B
+            jmp_mark 0x00000220
+            
+            read_var 0x08 to rax ; current token count
+            mov rstack to rsi
+            add $tokens to rsi
+            add 0x10 to rsi ; get second token which is reg
+            readv rsi to rax
+            
+            mov 0x00000000000000FF to rdx
+            and rdx to rax ; only index left
+
+            read_var 0x20 to rax 
+            mov rstack to rsi
+            add $out_buffer to rsi
+            add rax to rsi
+
+            mov 0x58 to rax
+            add rdx to rax
+            setv rax to rsi
+
+            read_var 0x20 to rax ; cureent out_buffer len
+            add 0x01 to rax
+            set_var rax to 0x20 
+
+        mark 0x00000220
+
+        read_var 0x08 to rax ; current token count
+        mov rstack to rsi
+        add $tokens to rsi
+        readv rsi to rax
+
+        ; if push
+        mov16 0x1000000000000050 to rbx
+        cmp rbx to rax
+        je 0x1B
+            jmp_mark 0x00000210
+            
+            read_var 0x08 to rax ; current token count
+            mov rstack to rsi
+            add $tokens to rsi
+            add 0x10 to rsi ; get second token which is reg
+            readv rsi to rax
+            
+            mov 0x00000000000000FF to rdx
+            and rdx to rax ; only index left
+
+            read_var 0x20 to rax 
+            mov rstack to rsi
+            add $out_buffer to rsi
+            add rax to rsi
+
+            mov 0x50 to rax
+            add rdx to rax
+            setv rax to rsi
+
+            read_var 0x20 to rax ; cureent out_buffer len
+            add 0x01 to rax
+            set_var rax to 0x20 
+
+        mark 0x00000210
+
+        read_var 0x08 to rax ; current token count
+        mov rstack to rsi
+        add $tokens to rsi
+        readv rsi to rax
+
+        ; if array
+        mov16 0x5000000000000000 to rbx
+        cmp rbx to rax
+        je 0x1B
+            jmp_mark 0x000004C0
+            
+            read_var 0x08 to rax ; current token count
+            mov rstack to rsi
+            add $tokens to rsi
+            add 0x10 to rsi ; get second token imm how many zeros
+            readv rsi to rax
+            shiftl rax by 0x03
+            mov rax to rdx
+            
+            read_var 0x20 to rax ; cureent out_buffer len
+            add rdx to rax ; skip how many 8 bytes
+            set_var rax to 0x20 
+
+        mark 0x000004C0
+
+        read_var 0x08 to rax ; current token count
+        mov rstack to rsi
+        add $tokens to rsi
+        readv rsi to rax
+
+        ; if mem
+        mov16 0x5000000000000001 to rbx
+        cmp rbx to rax
+        je 0x1B
+            jmp_mark 0x000004D0
+            
+            read_var 0x08 to rax ; current token count
+            mov rstack to rsi
+            add $tokens to rsi
+            add 0x10 to rsi ; get second token imm how many zeros
+            readv rsi to rax
+            mov rax to rdx
+            
+            read_var 0x20 to rax ; cureent out_buffer len
+
+            mov rstack to rsi
+            add $out_buffer to rsi
+            add rax to rsi
+
+            mov rdx to rax
+            setv rax to rsi
+
+            read_var 0x20 to rax ; cureent out_buffer len
+            add 0x08 to rax ; skip how many 8 bytes
+            set_var rax to 0x20 
+
+        mark 0x000004D0
+
+        read_var 0x08 to rax ; current token count
+        mov rstack to rsi
+        add $tokens to rsi
+        readv rsi to rax
+
+        ; if ret
+        mov16 0x10000000000000C3 to rbx
+        cmp rbx to rax
+        je 0x1B
+            jmp_mark 0x000003F0
+
+            read_var 0x20 to rax ; cureent out_buffer len
+
+            mov rstack to rsi
+            add $out_buffer to rsi
+            add rax to rsi
+
+            mov 0x000000C3 to rax
+            setv rax to rsi
+
+            read_var 0x20 to rax ; cureent out_buffer len
+            add 0x01 to rax
+            set_var rax to 0x20 
+
+        mark 0x000003F0
+
+        read_var 0x08 to rax ; current token count
+        mov rstack to rsi
+        add $tokens to rsi
+        readv rsi to rax
+
+        ; if syscall
+        mov16 0x1000000000000003 to rbx
+        cmp rbx to rax
+        je 0x1B
+            jmp_mark 0x00000200
+            read_var 0x20 to rax ; cureent out_buffer len
+
+            mov rstack to rsi
+            add $out_buffer to rsi
+            add rax to rsi
+
+            mov 0x0000050F to rax
+            setv rax to rsi
+
+            read_var 0x20 to rax ; cureent out_buffer len
+            add 0x02 to rax
+            set_var rax to 0x20 
+
+        mark 0x00000200
+        ; if and
+        read_var 0x08 to rax ; reread tokens
+        mov rstack to rsi
+        add $tokens to rsi
+        readv rsi to rax
+        
+        ; if and
+        mov16 0x1000000000000021 to rbx
+        cmp rbx to rax
+        je 0x1B
+            jmp_mark 0x000002B0
+
+
+            read_var 0x08 to rax ; current token count
+            mov rstack to rsi
+            add $tokens to rsi
+            readv rsi to rax
+
+            mov 0x03 to rdx
+            shiftl rdx by 0x06
+
+            add 0x08 to rsi
+            add 0x08 to rsi
+
+            readv rsi to rax
+            shiftl rax by 0x03 
+
+            or rdx to rax ; two registers
+
+            add 0x08 to rsi
+            add 0x08 to rsi
+            readv rsi to rax
+            or rdx to rax
+
+            read_var 0x20 to rax 
+
+            mov rstack to rsi
+            add $out_buffer to rsi
+            add rax to rsi
+            
+            mov 0x48 to rax
+            setv rax to rsi
+            add 0x01 to rsi
+            mov 0x21 to rax
+            setv rax to rsi
+            add 0x01 to rsi
+
+            mov rdx to rax
+            setv rax to rsi
+
+            read_var 0x20 to rax ; cureent out_buffer len
+            add 0x03 to rax
+            set_var rax to 0x20 
+            
+
+        mark 0x000002B0
+
+
+        read_var 0x08 to rax ; reread tokens
+        mov rstack to rsi
+        add $tokens to rsi
+        readv rsi to rax
+
+        ; if or
+        mov16 0x1000000000000009 to rbx
+        cmp rbx to rax
+        je 0x1B
+            jmp_mark 0x000002F0
+
+
+            read_var 0x08 to rax ; current token count
+            mov rstack to rsi
+            add $tokens to rsi
+            readv rsi to rax
+
+            mov 0x03 to rdx
+            shiftl rdx by 0x06
+
+            add 0x08 to rsi
+            add 0x08 to rsi
+
+            readv rsi to rax
+            shiftl rax by 0x03 
+
+            or rdx to rax ; two registers
+
+            add 0x08 to rsi
+            add 0x08 to rsi
+            readv rsi to rax
+            or rdx to rax
+
+            read_var 0x20 to rax 
+
+            mov rstack to rsi
+            add $out_buffer to rsi
+            add rax to rsi
+            
+            mov 0x48 to rax
+            setv rax to rsi
+            add 0x01 to rsi
+            mov 0x09 to rax
+            setv rax to rsi
+            add 0x01 to rsi
+
+            mov rdx to rax
+            setv rax to rsi
+
+            read_var 0x20 to rax ; cureent out_buffer len
+            add 0x03 to rax
+            set_var rax to 0x20 
+            
+
+        mark 0x000002F0
+
+        ; if cmp
+        read_var 0x08 to rax ; reread tokens
+        mov rstack to rsi
+        add $tokens to rsi
+        readv rsi to rax
+        
+        ; if cmp
+        mov16 0x100000000000009C to rbx
+        cmp rbx to rax
+        je 0x1B
+            jmp_mark 0x000002A0
+
+            read_var 0x08 to rax ; current token count
+            mov rstack to rsi
+            add $tokens to rsi
+            readv rsi to rax
+
+            mov 0x03 to rdx
+            shiftl rdx by 0x06
+
+            add 0x08 to rsi
+            add 0x08 to rsi
+
+            add 0x08 to rsi
+            add 0x08 to rsi
+
+            readv rsi to rax
+            shiftl rax by 0x03 
+
+            or rdx to rax ; two registers
+
+            sub 0x08 to rsi
+            sub 0x08 to rsi
+            readv rsi to rax
+            or rdx to rax
+
+            read_var 0x20 to rax 
+
+            mov rstack to rsi
+            add $out_buffer to rsi
+            add rax to rsi
+            
+            mov 0x48 to rax
+            setv rax to rsi
+            add 0x01 to rsi
+            mov 0x39 to rax
+            setv rax to rsi
+            add 0x01 to rsi
+
+            mov rdx to rax
+            setv rax to rsi
+
+            read_var 0x20 to rax ; cureent out_buffer len
+            add 0x03 to rax
+            set_var rax to 0x20 
+        
+        mark 0x000002A0
+
+        read_var 0x08 to rax ; reread tokens
+        mov rstack to rsi
+        add $tokens to rsi
+        readv rsi to rax
+
+        ; if brkp
+        mov16 0x9000000000000088 to rbx
+        cmp rbx to rax
+        je 0x1B
+            jmp_mark 0x000005E0
+            read_var 0x20 to rax ; cureent out_buffer len
+
+            mov rstack to rsi
+            add $out_buffer to rsi
+            add rax to rsi
+
+            mov 0x000000CC to rax
+            setv rax to rsi
+
+            read_var 0x20 to rax ; cureent out_buffer len
+            add 0x01 to rax
+            set_var rax to 0x20 
+
+        mark 0x000005E0
+        ; if shr
+        read_var 0x08 to rax ; reread tokens
+        mov rstack to rsi
+        add $tokens to rsi
+        readv rsi to rax
+        ; if shr
+        mov16 0x10000000000000C1 to rbx
+        cmp rbx to rax
+        je 0x1B
+            jmp_mark 0x000003B0
+
+
+            mov 0x03 to rdx
+            shiftl rdx by 0x06
+
+            mov 0x05 to rax
+            shiftl rax by 0x03
+            or rdx to rax
+
+            add 0x08 to rsi ; reg id
+            add 0x08 to rsi
+
+            readv rsi to rax
+            or rdx to rax
+
+            add 0x10 to rsi ; back to imm
+            readv rsi to rax
+            mov rax to rbx
+
+            read_var 0x20 to rax 
+
+            mov rstack to rsi
+            add $out_buffer to rsi
+            add rax to rsi
+
+            mov 0x48 to rax
+            setv rax to rsi
+            add 0x01 to rsi
+            mov 0xC1 to rax
+            setv rax to rsi
+
+            add 0x01 to rsi
+            mov rdx to rax
+            setv rax to rsi
+
+
+            add 0x01 to rsi
+            mov rbx to rax
+            setv rax to rsi
+
+            read_var 0x20 to rax ; cureent out_buffer len
+            add 0x04 to rax
+            set_var rax to 0x20 
+        mark 0x000003B0
+
+
+        ; if shl
+        read_var 0x08 to rax ; reread tokens
+        mov rstack to rsi
+        add $tokens to rsi
+        readv rsi to rax
+        ; if shl
+        mov16 0x10000000000001C1 to rbx
+        cmp rbx to rax
+        je 0x1B
+            jmp_mark 0x000003D0
+
+            mov 0x03 to rdx
+            shiftl rdx by 0x06
+
+            mov 0x04 to rax
+            shiftl rax by 0x03
+            or rdx to rax
+
+            add 0x08 to rsi ; reg id
+            add 0x08 to rsi
+
+            readv rsi to rax
+            or rdx to rax
+
+            add 0x10 to rsi ; back to imm
+            readv rsi to rax
+            mov rax to rbx
+
+            read_var 0x20 to rax 
+
+            mov rstack to rsi
+            add $out_buffer to rsi
+            add rax to rsi
+
+            mov 0x48 to rax
+            setv rax to rsi
+            add 0x01 to rsi
+            mov 0xC1 to rax
+            setv rax to rsi
+
+            add 0x01 to rsi
+            mov rdx to rax
+            setv rax to rsi
+
+
+            add 0x01 to rsi
+            mov rbx to rax
+            setv rax to rsi
+
+            read_var 0x20 to rax ; cureent out_buffer len
+            add 0x04 to rax
+            set_var rax to 0x20 
+
+        mark 0x000003D0
+
+        read_var 0x08 to rax ; reread tokens
+        mov rstack to rsi
+        add $tokens to rsi
+        readv rsi to rax
+        
+        ; if add
+        mov16 0x1000000000000081 to rbx
+        cmp rbx to rax
+        je 0x1B
+            jmp_mark 0x000001A0
+
+        ; now if type args is two registers > one route
+        add 0x08 to rsi ; mov type
+
+        add 0x08 to rsi ; first arg
+        add 0x08 to rsi ; first type
+        readv rsi to rax
+        mov rax to rbx
+        add 0x08 to rsi ; second arg
+        add 0x08 to rsi ; second type
+        readv rsi to rax
+        add rax to rbx ; if == 4 two registers if == 5 reg and number
+        mov16 0x5000000000000000 to rax
+        cmp rbx to rax
+        je 0x1B
+            jmp_mark 0x000001B0
+
+            read_var 0x08 to rax ; current token count
+            mov rstack to rsi
+            add $tokens to rsi
+            readv rsi to rax
+
+
+            mov 0x03 to rdx
+            shiftl rdx by 0x06
+
+            add 0x08 to rsi
+            add 0x08 to rsi
+
+            add 0x08 to rsi
+            add 0x08 to rsi
+            readv rsi to rax
+            or rdx to rax
+
+            sub 0x10 to rsi ; back to imm
+            readv rsi to rax
+            mov rax to rbx
+
+            read_var 0x20 to rax 
+
+            mov rstack to rsi
+            add $out_buffer to rsi
+            add rax to rsi
+            ; 48 81 modrm
+            mov 0x48 to rax
+            setv rax to rsi
+            add 0x01 to rsi
+            mov 0x81 to rax
+            setv rax to rsi
+            add 0x01 to rsi
+
+                    
+            mov rdx to rax
+            setv rax to rsi
+            add 0x01 to rsi
+
+            mov rbx to rax
+            setv rax to rsi
+            add 0x04 to rsi
+
+            read_var 0x20 to rax ; cureent out_buffer len
+            add 0x07 to rax
+            set_var rax to 0x20 
+            mark 0x000001B0
+        
+        mov16 0x4000000000000000 to rax
+        cmp rbx to rax
+        je 0x1B
+            jmp_mark 0x000001A0
+        read_var 0x08 to rax ; current token count
+        mov rstack to rsi
+        add $tokens to rsi
+        readv rsi to rax
+
+        mov 0x03 to rdx
+        shiftl rdx by 0x06
+
+        add 0x08 to rsi
+        add 0x08 to rsi
+
+        readv rsi to rax
+        shiftl rax by 0x03 
+
+        or rdx to rax ; two registers
+
+
+        add 0x08 to rsi
+        add 0x08 to rsi
+        readv rsi to rax
+        or rdx to rax
+
+        read_var 0x20 to rax 
+
+        mov rstack to rsi
+        add $out_buffer to rsi
+        add rax to rsi
+
+        mov 0x48 to rax
+        setv rax to rsi
+        add 0x01 to rsi
+        mov 0x01 to rax
+        setv rax to rsi
+        add 0x01 to rsi
+
+
+        mov rdx to rax
+        setv rax to rsi
+
+        read_var 0x20 to rax ; cureent out_buffer len
+        add 0x03 to rax
+        set_var rax to 0x20 
+        
+        mark 0x000001A0
+
+        read_var 0x08 to rax ; reread tokens
+        mov rstack to rsi
+        add $tokens to rsi
+        readv rsi to rax
+
+
+        read_var 0x08 to rax ; reread tokens
+        mov rstack to rsi
+        add $tokens to rsi
+        readv rsi to rax
+        
+        ; if sub
+        mov16 0x1000000000000029 to rbx
+        cmp rbx to rax
+        je 0x1B
+            jmp_mark 0x000002C0
+
+        ; now if type args is two registers > one route
+        add 0x08 to rsi ; mov type
+
+        add 0x08 to rsi ; first arg
+        add 0x08 to rsi ; first type
+        readv rsi to rax
+        mov rax to rbx
+        add 0x08 to rsi ; second arg
+        add 0x08 to rsi ; second type
+        readv rsi to rax
+        add rax to rbx ; if == 4 two registers if == 5 reg and number
+        mov16 0x5000000000000000 to rax
+        cmp rbx to rax
+        je 0x1B
+            jmp_mark 0x000002E0
+
+            read_var 0x08 to rax ; current token count
+            mov rstack to rsi
+            add $tokens to rsi
+            readv rsi to rax
+
+
+            mov 0x03 to rdx
+            shiftl rdx by 0x06
+    
+
+            add 0x08 to rsi
+            add 0x08 to rsi
+
+            add 0x08 to rsi
+            add 0x08 to rsi
+            readv rsi to rax
+            or rdx to rax
+
+            sub 0x10 to rsi ; back to imm
+            readv rsi to rax
+            mov rax to rbx
+
+            read_var 0x20 to rax 
+
+            mov rstack to rsi
+            add $out_buffer to rsi
+            add rax to rsi
+
+            mov 0x48 to rax
+            setv rax to rsi
+            add 0x01 to rsi
+            mov 0x81 to rax
+            setv rax to rsi
+            add 0x01 to rsi
+
+                    
+            mov rdx to rax
+            add 0x28 to rax ; add to turn add to sub
+            setv rax to rsi
+            add 0x01 to rsi
+
+            mov rbx to rax
+            setv rax to rsi
+            add 0x04 to rsi
+
+            read_var 0x20 to rax ; cureent out_buffer len
+            add 0x07 to rax
+            set_var rax to 0x20 
+            mark 0x000002E0
+        
+        mov16 0x4000000000000000 to rax
+        cmp rbx to rax
+        je 0x1B
+            jmp_mark 0x000002C0
+        read_var 0x08 to rax ; current token count
+        mov rstack to rsi
+        add $tokens to rsi
+        readv rsi to rax
+
+        mov 0x03 to rdx
+        shiftl rdx by 0x06
+
+        add 0x08 to rsi
+        add 0x08 to rsi
+
+        readv rsi to rax
+        shiftl rax by 0x03 
+
+        or rdx to rax ; two registers
+
+
+        add 0x08 to rsi
+        add 0x08 to rsi
+        readv rsi to rax
+        or rdx to rax
+
+        read_var 0x20 to rax 
+
+        mov rstack to rsi
+        add $out_buffer to rsi
+        add rax to rsi
+
+        mov 0x48 to rax
+        setv rax to rsi
+        add 0x01 to rsi
+        mov 0x29 to rax
+        setv rax to rsi
+        add 0x01 to rsi
+
+
+        mov rdx to rax
+        setv rax to rsi
+
+        read_var 0x20 to rax ; cureent out_buffer len
+        add 0x03 to rax
+        set_var rax to 0x20 
+        
+        mark 0x000002C0
+        
+        read_var 0x08 to rax ; reread tokens
+        mov rstack to rsi
+        add $tokens to rsi
+        readv rsi to rax
+    
+        ; if mov
+        mov16 0x1000000000000089 to rbx
+        cmp rbx to rax
+        je 0x1B
+            jmp_mark 0x00000140
+        ; now if type args is two registers > one route
+        add 0x08 to rsi ; mov type
+
+        add 0x08 to rsi ; first arg
+        add 0x08 to rsi ; first type
+        readv rsi to rax
+        mov rax to rbx
+        add 0x08 to rsi ; second arg
+        add 0x08 to rsi ; second type
+        readv rsi to rax
+        add rax to rbx ; if == 4 two registers if == 5 reg and number
+        mov16 0x5000000000000000 to rax
+        cmp rbx to rax
+        je 0x1B
+            jmp_mark 0x00000160
+            
+            read_var 0x08 to rax ; current token count
+            mov rstack to rsi
+            add $tokens to rsi
+            readv rsi to rax
+
+            ; 48 C7 11 000 000(rax) (hex number) 
+
+            mov 0x03 to rdx
+            shiftl rdx by 0x06
+    
+            add 0x08 to rsi
+            add 0x08 to rsi
+
+            add 0x08 to rsi
+            add 0x08 to rsi
+            readv rsi to rax
+            or rdx to rax
+
+            sub 0x10 to rsi ; back to imm
+            readv rsi to rax
+
+            mov16 0x7FFFFFFFFFFFFFFF to rbx
+            mov rbx to rcx
+            and rbx to rax                ; Clear sign bit of rax
+            mov16 0x000000007FFFFFFF to rbx
+            cmp rax to rbx
+            jb 0x1B
+                jmp_mark 0x000001C0
+                mov rax to rbx ; save imm
+
+                read_var 0x08 to rax ; current token count
+                mov rstack to rsi
+                add $tokens to rsi
+                readv rsi to rax
+                add 0x20 to rsi
+                readv rsi to rax ; register id
+
+                mov rax to rdx
+
+                read_var 0x20 to rax 
+
+                mov rstack to rsi
+                add $out_buffer to rsi
+                add rax to rsi
+
+                mov 0x48 to rax
+                setv rax to rsi
+                add 0x01 to rsi
+                mov 0xB8 to rax
+                add rdx to rax
+                setv rax to rsi
+                add 0x01 to rsi
+            
+                mov rbx to rax
+                setv rax to rsi
+                add 0x08 to rsi
+
+
+                read_var 0x20 to rax ; cureent out_buffer len
+                add 0x0A to rax
+                set_var rax to 0x20 
+            jmp_mark 0x00000160
+            mark 0x000001C0
+
+            read_var 0x08 to rax ; current token count
+            mov rstack to rsi
+            add $tokens to rsi
+            readv rsi to rax
+
+            add 0x08 to rsi
+            add 0x08 to rsi
+            readv rsi to rax
+            mov rax to rbx
+
+            read_var 0x20 to rax 
+
+            mov rstack to rsi
+            add $out_buffer to rsi
+            add rax to rsi
+
+            mov 0x48 to rax
+            setv rax to rsi
+            add 0x01 to rsi
+            mov 0xC7 to rax
+            setv rax to rsi
+            add 0x01 to rsi
+        
+            mov rdx to rax
+            setv rax to rsi
+            add 0x01 to rsi
+
+            mov rbx to rax
+            setv rax to rsi
+            add 0x04 to rsi
+
+
+            read_var 0x20 to rax ; cureent out_buffer len
+            add 0x07 to rax
+            set_var rax to 0x20 
+        mark 0x00000160
+
+        mov16 0x4000000000000000 to rax
+        cmp rbx to rax
+        je 0x1B
+            jmp_mark 0x00000140
+
+            read_var 0x08 to rax ; current token count
+            mov rstack to rsi
+            add $tokens to rsi
+            readv rsi to rax
+            ; mov with two registers lets construcat
+            ; add 0x48
+            ; add 0x89
+            ; mode 11
+            mov 0x03 to rdx
+            shiftl rdx by 0x06
+    
+            add 0x08 to rsi
+            add 0x08 to rsi
+
+    
+            readv rsi to rax
+            shiftl rax by 0x03 
+
+            or rdx to rax
+
+            add 0x08 to rsi
+            add 0x08 to rsi
+            readv rsi to rax
+            or rdx to rax
+
+            read_var 0x20 to rax 
+
+            mov rstack to rsi
+            add $out_buffer to rsi
+            add rax to rsi
+
+ 
+            mov 0x48 to rax
+            setv rax to rsi
+            add 0x01 to rsi
+            mov 0x89 to rax
+            setv rax to rsi
+            add 0x01 to rsi
+
+            mov rdx to rax
+            setv rax to rsi
+
+            read_var 0x20 to rax ; cureent out_buffer len
+            add 0x03 to rax
+            set_var rax to 0x20 
+            
+
+        mark 0x00000140
+
+
+
+        ; if readv
+        read_var 0x08 to rax ; reread tokens
+        mov rstack to rsi
+        add $tokens to rsi
+        readv rsi to rax
+        
+        ; if readv
+        mov16 0x1000000000000189 to rbx
+        cmp rbx to rax
+        je 0x1B
+            jmp_mark 0x000003C0
+
+        read_var 0x08 to rax ; current token count
+        mov rstack to rsi
+        add $tokens to rsi
+        readv rsi to rax
+
+        mov 0x01 to rdx
+        shiftl rdx by 0x06
+
+        add 0x08 to rsi
+        add 0x08 to rsi
+
+        add 0x08 to rsi
+        add 0x08 to rsi
+
+        readv rsi to rax
+        shiftl rax by 0x03 
+
+        or rdx to rax ; two registers
+
+        sub 0x08 to rsi
+        sub 0x08 to rsi
+
+        readv rsi to rax
+        or rdx to rax
+
+        read_var 0x20 to rax 
+
+        mov rstack to rsi
+        add $out_buffer to rsi
+        add rax to rsi
+        
+        mov 0x48 to rax
+        setv rax to rsi
+        add 0x01 to rsi
+        mov 0x8B to rax
+        setv rax to rsi
+        add 0x01 to rsi
+
+        mov rdx to rax
+        setv rax to rsi
+
+        read_var 0x20 to rax ; cureent out_buffer len
+        add 0x04 to rax
+        set_var rax to 0x20 
+        
+        mark 0x000003C0
+
+
+        ; if setv
+        read_var 0x08 to rax ; reread tokens
+        mov rstack to rsi
+        add $tokens to rsi
+        readv rsi to rax
+        
+        ; if setv
+        mov16 0x1000000000000289 to rbx
+        cmp rbx to rax
+        je 0x1B
+            jmp_mark 0x000003E0
+
+        read_var 0x08 to rax ; current token count
+        mov rstack to rsi
+        add $tokens to rsi
+        readv rsi to rax
+
+        mov 0x01 to rdx
+        shiftl rdx by 0x06
+
+        add 0x08 to rsi
+        add 0x08 to rsi
+
+        readv rsi to rax
+        shiftl rax by 0x03 
+
+        or rdx to rax ; two registers
+
+        add 0x08 to rsi
+        add 0x08 to rsi
+
+        readv rsi to rax
+        or rdx to rax
+
+        read_var 0x20 to rax 
+
+        mov rstack to rsi
+        add $out_buffer to rsi
+        add rax to rsi
+        
+        mov 0x48 to rax
+        setv rax to rsi
+        add 0x01 to rsi
+        mov 0x89 to rax
+        setv rax to rsi
+        add 0x01 to rsi
+
+        mov rdx to rax
+        setv rax to rsi
+
+        read_var 0x20 to rax ; cureent out_buffer len
+        add 0x04 to rax
+        set_var rax to 0x20 
+        
+        mark 0x000003E0
+
+
+        ; check for tokens parsed and opcodes generated on imbalance throw err
+        read_var 0x08 to rax ; current token count
+        mov rstack to rsi
+        add $tokens to rsi
+        mov 0x00 to rax
+        setv rax to rsi ; clear first token
+        add 0x08 to rsi
+        setv rax to rsi 
+        add 0x08 to rsi
+        setv rax to rsi 
+        add 0x08 to rsi
+        setv rax to rsi 
+        add 0x08 to rsi
+        setv rax to rsi 
+        add 0x08 to rsi
+        setv rax to rsi 
+        add 0x08 to rsi
+        setv rax to rsi 
+        add 0x08 to rsi
+        setv rax to rsi 
+        add 0x08 to rsi
+        setv rax to rsi 
+
+        read_var 0x08 to rax ; cureent tokens size
+        mov 0x00 to rax
+        set_var rax to 0x08 
+        
+        ; ------ GENERATE OPCODES END ------
+        
+        mark 0x00000120
+        mov 0x40 to rax
+        cmp rdi to rax
+        jge 0x1B
+    jmp_mark 0x40
+
+    ; что если находимся в слове 
+
+    mov 0x00 to rax
+    set_var rax to 0x30 ; overflow len
+
+    mark 0x00000300
+        read_var 0x30 to rax
+        mov rstack to rsi
+        add $in_buffer to rsi
+        add rdi to rsi
+        sub 0x01 to rsi
+        sub rax to rsi
+        cmp rdi to rax
+        jne 0x1B
+            jmp_mark 0x00000310 ;
+        
+
+        readv rsi to rax
+        mov16 0x000000000000000A to rcx
+        mov16 0x00000000000000FF to rbx
+        and rbx to rax
+        cmp rcx to rbx
+        jne 0x1B
+            jmp_mark 0x00000310 ; fin counting
+
+        mov16 0x0000000000000020 to rcx
+        mov16 0x00000000000000FF to rbx
+        and rbx to rax
+        cmp rcx to rbx
+        jne 0x1B
+            jmp_mark 0x00000310 ; fin counting
+
+        test rax
+        jnz 0x1B
+            jmp_mark 0x00000310 ; fin counting
+
+        read_var 0x30 to rax
+        add 0x01 to rax
+        set_var rax to 0x30
+
+        jmp_mark 0x00000300
+    mark 0x00000310
+
+    
+jmp_mark 0x30
+
+mark 0x20
+    read_var 0x20 to rax 
+    mov rax to rdx
+
+
+    ; replace labels with offsets
+    ; ----- START REPLACE LABELS ------
+    mov 0x00 to rdi ; counter; skip first 3 dwords
+
+
+    mark 0x00000490
+    add 0x18 to rdi
+    mov rstack to rsi
+    add $jmp_map to rsi
+    readv rsi to rax ; current label count
+    add 0x18 to rax
+    cmp rdi to rax
+    jne 0x1B
+        jmp_mark 0x000004B0
+
+    mov rstack to rsi
+    add $jmp_map to rsi
+    add rdi to rsi ; add counter
+
+    readv rsi to rax ; first part of label
+    set_var rax to 0x70
+
+
+    mov rstack to rsi
+    add $jmp_map to rsi
+    add rdi to rsi ; add counter
+    add 0x08 to rsi
+    readv rsi to rax ; second part of label
+    set_var rax to 0x80
+
+
+    mov rstack to rsi
+    add $jmp_map to rsi
+    add rdi to rsi ; add counter
+    add 0x08 to rsi
+    add 0x08 to rsi
+    readv rsi to rax ; byte position of jm opcode
+    set_var rax to 0x10
+
+    mov rdi to rax
+    set_var rax to 0x60 ; save counter
+    mov 0x00 to rdi ; new counter for labels search
+    ; now find label position
+    mark 0x000004A0
+        add 0x18 to rdi
+        ; if counter over jump out
+        mov rstack to rsi
+        add $inrlbls to rsi
+        readv rsi to rax
+        add 0x18 to rax
+        cmp rdi to rax
+        jne 0x1B
+            jmp_mark 0x000004F0 ; or throw error
+
+        add rdi to rsi ; add counter
+        readv rsi to rax ; first part of label
+        mov rax to rcx
+        read_var 0x70 to rax
+        cmp rcx to rax
+        je 0x1B
+            jmp_mark 0x000004A0
+
+        mov rstack to rsi
+        add $inrlbls to rsi
+        add rdi to rsi 
+        
+        add 0x08 to rsi
+
+        readv rsi to rax ; second part of label
+        mov rax to rcx
+        read_var 0x80 to rax
+        cmp rcx to rax
+        je 0x1B
+              jmp_mark 0x000004A0
+
+        ; HORAY found label
+    
+        mov rstack to rsi
+        add $inrlbls to rsi
+        add rdi to rsi 
+
+
+        add 0x10 to rsi
+        readv rsi to rax ; rax holds position of label
+        mov rax to rcx
+        read_var 0x10 to rax ; position of jmp label
+
+        sub rax to rcx
+        sub 0x06 to rcx ; skip jmp itself
+        ; rcx should hold offset
+        mov rstack to rsi          ; rsi = адрес буфера out_buffer
+        add $out_buffer to rsi
+        add rax to rsi
+        
+        add 0x06 to rsi ; skip jmp opcode
+        readv rsi to rax
+        mov rax to rdx
+
+        sub 0x04 to rsi
+        readv rsi to rax
+        ; mov16 0xFFFF00000000FFFF rax will alway be "je opcode" 3byte zero (cause of JMP) "next opcodes"
+        ; 
+        mov rcx to rax
+        setv rax to rsi
+
+        mov rdx to rax
+        add 0x04 to rsi
+        setv rax to rsi
+        ; updated for one jmp instruction
+
+    read_var 0x60 to rax ; read counter
+    mov rax to rdi
+    
+
+    jmp_mark 0x00000490
+
+    mark 0x000004B0
+    ; ----- END REPLACE LABELS ------
+    read_var 0x20 to rax 
+    mov rax to rdx
+    mov 0x01 to rax   ; sys_write
+    mov 0x00000001 to rdi   ; rdi = stdout (1)
+    mov rstack to rsi          ; rsi = адрес буфера out_buffer
+    add $out_buffer to rsi
+    syscall                 ; Выводим содержимое файла на экран!
+
+
+    mov 0x3C to rax
+    mov 0x00000012 to rdi
+    syscall
+
+    mark 0x000004F0
+
+    mov 0x0A727265 to rax
+    push rax
+
+    ; Write to stderr
+    mov 0x01 to rax        ; sys_write
+    mov 0x02 to rdi        ; stderr (fd 2)
+    mov rstack to rsi         ; rsi points to top of stack ("err\n")
+    mov 0x04 to rdx        ; length = 4 bytes
+    syscall
+
+    mov 0x3C to rax
+    mov 0x01 to rdi
+    syscall
+
+add 0x01 to r15
+jmp_mark 0x00
