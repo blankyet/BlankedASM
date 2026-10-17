@@ -1,0 +1,108 @@
+; server.blsm  (macOS x86_64)
+; Minimal one-connection HTTP server.
+; macOS syscalls = 0x02000000 + BSD number
+;   exit=1 write=4 close=6 accept=30(0x1E) socket=97(0x61)
+;   bind=104(0x68) listen=106(0x6A)
+
+.main
+; write(1, startup_msg, 28)
+mov 0x01 to rdi
+load .startup_msg
+mov rax to rsi
+mov 0x1C to rdx
+mov 0x02000004 to rax
+syscall
+
+; socket(AF_INET=2, SOCK_STREAM=1, 0)
+mov 0x02 to rdi
+mov 0x01 to rsi
+mov 0x00 to rdx
+mov 0x02000061 to rax
+syscall
+mov rax to rbx           ; server fd
+
+; bind(server_fd, sockaddr, 16)
+mov rbx to rdi
+load .sockaddr
+mov rax to rsi
+mov 0x10 to rdx
+mov 0x02000068 to rax
+syscall
+
+; listen(server_fd, 1)
+mov rbx to rdi
+mov 0x01 to rsi
+mov 0x0200006A to rax
+syscall
+
+; accept(server_fd, NULL, NULL)
+mov rbx to rdi
+mov 0x00 to rsi
+mov 0x00 to rdx
+mov 0x0200001E to rax
+syscall
+mov rax to rbp           ; client fd
+
+; write(client_fd, response, 168)
+mov rbp to rdi
+load .response
+mov rax to rsi
+mov 0xA8 to rdx
+mov 0x02000004 to rax
+syscall
+
+; close(client_fd)
+mov rbp to rdi
+mov 0x02000006 to rax
+syscall
+
+; exit(0)
+mov 0x00 to rdi
+mov 0x02000001 to rax
+syscall
+
+; macOS sockaddr_in: byte0 = sin_len (16), byte1 = family (2),
+; then port (network order 0x1F90 = 8080), then address 0 (INADDR_ANY)
+.sockaddr
+    mem 0x00000000901F0210
+    mem 0x0000000000000000
+
+.startup_msg
+    mem 0x747468206E65704F ; "Open htt"
+    mem 0x61636F6C2F2F3A70 ; "p://loca"
+    mem 0x30383A74736F686C ; "lhost:80"
+    mem 0x000000000A2F3038 ; "80/\n"
+
+.response
+; HTTP/1.1 200 OK\r\n
+    mem 0x312E312F50545448
+    mem 0x0D4B4F2030303220
+
+; Content-Type: text/html; charset=utf-8\r\n
+    mem 0x746E65746E6F430A
+    mem 0x74203A657079542D
+    mem 0x6C6D74682F747865
+    mem 0x657372616863203B
+    mem 0x0D382D6674753D74
+
+; Content-Length: 70\r\n
+    mem 0x746E65746E6F430A
+    mem 0x3A6874676E654C2D
+    mem 0x6E6F430A0D303720
+
+; Connection: close\r\n\r\n
+    mem 0x3A6E6F697463656E
+    mem 0x0A0D65736F6C6320
+
+; <h1>Hello from BLsm!</h1>\n
+    mem 0x65483E31683C0A0D
+    mem 0x6D6F7266206F6C6C
+    mem 0x2F3C216D734C4220
+    mem 0x533E703C0A3E3168
+
+; <p>Served directly by my own assembler.</p>\n
+    mem 0x6964206465767265
+    mem 0x6220796C74636572
+    mem 0x6E776F20796D2079
+    mem 0x6C626D6573736120
+    mem 0x0A3E702F3C2E7265

@@ -1,0 +1,1816 @@
+; read file +
+; parse token. + 
+; parse imedeate values, +
+; string table is needed +
+; link table too +
+; allocate string table later
+; allocate program output later
+; allocate jmp table later
+
+; generate opcodes +-
+; link jmps to labels +
+
+; second pass +
+; link correct outputs +
+
+; output executable self bootstrapp completed
+; add defines
+; add import
+; 
+
+mov 0x03 to rax
+cmp rdi to rax
+je .have_argv
+
+; ELF entry point: initial stack
+readv rsp to rax       ; argc
+mov rsp to rsi
+add 0x08 to rsi        ; argv = rsp + 8
+mov rax to rdi         ; argc, if needed later
+
+
+.have_argv
+
+; rsi = argv (char**)
+
+add 0x08 to rsi
+readv rsi to rbx
+load .first_arg
+setv rbx to rax
+
+add 0x08 to rsi
+readv rsi to rbx
+load .second_arg
+setv rbx to rax
+
+mov rsp to rsi
+add 0x10 to rsi ; skip first two
+sub 0x02 to rdi
+mov rdi to rax
+setv rax to rsi ; argc always 2 for now
+
+load .save_rsp
+setv rsi to rax
+
+
+call .open_file
+call .file_loop ; skip vars
+
+.line_end
+    mem 0x00
+
+.file_loop
+    call .read_file
+    
+    mov 0x00 to rdx
+    cmp rdx to rax
+    je .read_done
+
+    call .reset_rdln
+    call .reset_token_buf
+
+    .line_loop
+        call .read_line
+        
+        mov rax to rdi
+        load .line_end
+        setv rdx to rax
+        mov rdi to rax
+
+        mov 0xFFFFFFFFFFFFFFFF to rdx
+        cmp rdx to rax
+        je .lines_done
+
+        .word_loop ; start line or word
+            call .read_next_word
+
+
+
+            cmp rax to rdx          ; new: end == start -> empty word
+            je .after_word          ; new
+
+            mov rax to rdi
+
+            load .in_buffer
+            add rdi to rax
+            readv rax to rbx
+            mov 0xFF to rax
+            and rax to rbx
+            
+            mov 0x3B to rax ; if ";"
+            cmp rax to rbx
+            je .words_done
+            mov rdi to rax
+
+            
+
+            push rdx ; word end
+            call .parse_wd_token
+            pop rax ; becomes start
+
+            
+
+            .after_word             ; new label
+            mov rax to rdi
+            load .line_end
+            readv rax to rdx
+            mov rdi to rax
+
+            cmp rax to rdx
+            je .words_done
+            
+            add 0x01 to rax
+
+            jmp .word_loop 
+
+        .words_done
+
+    jmp .line_loop
+
+.lines_done
+
+
+    load .opcodes_i
+    mov 0x00 to rdx
+    setv rdx to rax
+
+    call .generate_opcodes
+
+    jmp .file_loop
+
+.read_done
+    
+    call .linking_stage
+
+
+load .opcodes_len
+readv rax to rdx ; code len
+add 0x00000168 to rdx  ; header code
+mov rdx to rsi
+add 0x00100000 to rsi
+
+
+load .second_arg
+readv rax to rdi
+readv rdi to rdi
+mov 0x0000FFFF to rax
+and rax to rdi
+mov 0x00006A2D to rax ; if -j go to code instead
+cmp rax to rdi
+jne .save_file
+    ; execute code
+    load .save_rsp
+    readv rax to rsp
+
+    jmp .opcodes_buf
+
+
+.save_file
+
+load .second_arg
+readv rax to rdi
+
+load .macho_header
+add 0x98 to rax          ; offset 0x98 = filesize
+setv rdx to rax          ; write actual file size
+; Patch __TEXT.vmsize
+sub 0x10 to rax          ; offset 0x88 = vmsize
+setv rsi to rax          ; write mapped memory size
+
+load .macho_header
+mov rax to rsi
+call .write_to_file
+
+
+mov 0x02000001 to rax         ; sys_exit (1)
+mov 0x00 to rdi
+syscall
+
+
+; read_file
+; parse to list of token and labels
+; generate opcodes with that tokens
+.open_file
+    load .first_arg
+    readv rax to rdi          ; rdi = filename string pointer
+    mov 0x00000000 to rsi     ; rsi = O_RDONLY (0)
+    mov 0x00000000 to rdx     ; rdx = mode (0)
+    mov 0x02000005 to rax
+    syscall
+    
+    mov rax to rsi
+    load .file_desc
+    setv rsi to rax           ; Save returned FD into .file_desc
+    ret
+    
+.read_file
+    load .file_desc
+    readv rax to rdi          ; rdi = file descriptor
+    load .in_buffer
+    mov rax to rsi            ; rsi = destination buffer pointer
+    push rdi
+    mov 0x00000600 to rdx           ; rdx = max bytes to read
+    mov 0x02000003 to rax            ; sys_read
+    syscall                   ; rax now holds actual bytes read
+
+    mov 0x00 to rdx
+    cmp rdx to rax
+    je .read_done
+
+    mov rax to rsi
+    mov 0x00000600 to rdx
+    cmp rdx to rax
+    jne .put_last_n 
+
+    load .in_buffer
+    mov rax to rsi
+    
+    add 0x01 to rdx
+    .last_n_loop
+        sub 0x01 to rdx
+        mov rsi to rbx
+        add rdx to rbx
+        
+        readv rbx to rdi
+        mov 0x0A to rax
+        mov 0xFF to rcx
+    
+        and rdi to rcx
+        cmp rax to rcx
+        jne .last_n_loop
+
+    
+    mov 0x00000600 to rbx
+    sub rdx to rbx
+    mov 0x00 to rsi
+    sub rbx from rsi          ; rsi = -tail
+    mov 0x01 to rdx           ; SEEK_CUR
+    mov 0x020000C7 to rax           ; sys_lseek
+    pop rdi
+    syscall                   ; rdi still = fd
+    
+    ret
+
+.put_last_n
+    mov rax to rbx
+    load .in_buffer
+    add rbx to rax
+    mov 0x0A to rdx
+    setv rdx to rax
+
+.clear_buffer
+    load .in_buffer
+    add rbx to rax
+    mov 0x00 to rdi
+    setv rdi to rax
+    add 0x01 to rbx
+    mov 0x00000600 to rdi
+    cmp rbx to rdi
+    jne .clear_buffer
+
+    pop rdi
+    mov rsi to rax
+    ret
+
+
+.print_file
+    mov rax to rdx            ; rdx = actual bytes read (from sys_read return)
+    load .in_buffer
+    mov rax to rsi            ; rsi = buffer pointer
+    mov 0x01 to rdi           ; rdi = stdout (1)
+    mov 0x02000004 to rax           ; sys_write
+    syscall
+    ret
+
+.print_tokens
+    load .token_buffer
+    readv rax to rdx
+    mov rax to rsi            ; rsi = buffer pointer
+    mov 0x01 to rdi           ; rdi = stdout (1)
+    mov 0x02000004 to rax           ; sys_write
+    syscall
+    ret
+
+
+; read_line:
+;   rax = start offset
+;   rdx = end offset (exclusive)
+;   rax = -1 if line exceeds 200 bytes
+
+.rdln_offset
+    mem 0x0000000000000000
+
+.reset_rdln
+    push rax
+    push rcx
+    load .rdln_offset
+    mov 0x00 to rcx
+    setv rcx to rax
+    pop rcx
+    pop rax
+    ret
+
+
+
+.read_line
+
+        load .rdln_offset
+        readv rax to rbp
+
+        load .in_buffer
+        mov rax to rsi
+        add rbp to rsi
+
+        mov 0x00 to rdi
+
+    .rdln_loop
+        readv rsi to rax
+
+        mov 0xFF to rcx
+        and rcx to rax
+
+        mov 0x0A to rcx
+        cmp rax to rcx
+        je .endl_found
+
+        mov 0xC8 to rcx
+        cmp rdi to rcx
+        je .too_long
+
+        add 0x01 to rdi
+        add 0x01 to rsi
+        jmp .rdln_loop
+
+    .endl_found
+        
+        load .rdln_offset
+        readv rax to rdx
+        add rdi to rdx
+
+        mov 0x01 to rcx
+        add rcx to rdx
+        setv rdx to rax
+
+        mov rbp to rax
+        mov rbp to rdx
+        add rdi to rdx
+        ret
+
+    .too_long
+        mov 0xFFFFFFFFFFFFFFFF to rax
+        ret
+
+; read_next_word(rax: start) -> rdx: end_word
+.read_next_word
+    push rax
+    mov rax to rdi
+    mov rax to rdx
+    load .in_buffer
+    
+    add rdi to rax 
+
+    
+    .read_nw_loop
+        readv rax to rsi
+        mov 0xFF to rdi
+        and rdi to rsi
+
+        mov 0x20 to rdi
+        cmp rsi to rdi
+        je .word_done
+
+        mov 0x0A to rdi
+        cmp rsi to rdi
+        je .word_done
+
+        mov 0x09 to rdi
+        cmp rsi to rdi
+        je .word_done
+
+        add 0x01 to rax
+        add 0x01 to rdx
+        jmp .read_nw_loop
+
+.word_done
+    pop rax
+    ret
+    
+; print_word(rax: start, rdx: end)
+
+.print_word
+    push rax
+    push rdx
+
+    mov rax to rcx
+    load .in_buffer
+    add rcx to rax
+    mov rax to rsi
+
+    sub rcx to rdx
+
+    mov 0x01 to rdi
+    mov 0x02000004 to rax
+    syscall
+
+    mov 0x0A to rsi
+    push rsi
+    mov rsp to rsi
+    mov 0x01 to rdx 
+    mov 0x01 to rdi
+    mov 0x02000004 to rax
+    syscall
+    pop rsi
+
+    pop rdx
+    pop rax
+    ret
+
+.print_line
+    mov rax to rcx
+    load .in_buffer
+    add rcx to rax
+    mov rax to rsi
+    
+
+    sub rcx to rdx
+    add 0x01 to rdx
+
+    mov 0x01 to rdi
+    mov 0x02000004 to rax
+    syscall
+    ret
+; parse_wd_token(rax: start, rdx: end)
+
+.parse_wd_token
+    mov rax to rcx
+    load .in_buffer
+    add rcx to rax
+    sub rcx to rdx          ; rdx = word length
+
+    mov rax to rcx          ; rcx = word pointer
+    ; parse 0x
+    call .parse_hex
+    call .parse_label
+
+    mov 0x00 to rbx
+    cmp rax to rbx
+
+    je .yet_to_parse
+        ret
+
+    
+    .yet_to_parse
+    ; parse language tokens
+    load .token_table
+    mov rax to rbx          ; rbx = table*
+
+    .table_wd_loop
+        push rcx
+        readv rbx to rax   ; key
+
+        mov 0xFFFFFFFFFFFFFFFF to rsi
+        cmp rax to rsi
+        je .parse_wd_done
+
+        add 0x08 to rbx
+        readv rbx to rsi   ; count
+
+        cmp rsi to rdx
+        jne .next_token
+
+        ; compare count bytes
+        mov rsi to rdi
+
+        .cmp_chars
+            mov 0x00 to rsi              ; rsi = 0
+            cmp rsi to rdi               ; rdi = remaining chars
+            je .token_wd_found           ; all chars matched
+
+            readv rcx to rsi             ; rsi = current input bytes, rcx = input pointer
+            mov 0xFF to rbp              ; rbp = 0xFF
+            and rbp to rsi               ; rsi = current input char
+
+            mov 0xFF to rbp              ; rbp = 0xFF
+            push rax
+            and rbp to rax               ; rax = current key char
+            mov rax to rbp
+            pop rax
+
+            cmp rsi to rbp               ; input char == key char?
+            jne .next_token              ; no -> try next token
+
+            shr rax to 0x08              ; rax = next key char
+            add 0x01 to rcx              ; rcx = next input char
+            sub 0x01 to rdi              ; rdi = remaining chars - 1
+            jmp .cmp_chars
+
+        .next_token
+            add 0x10 to rbx              ; rbx = next token entry
+            mov rax to rsi               ; BUG: rax is already shifted key, not original word start
+            load .in_buffer              ; rax = in_buffer address
+            ; rcx is also no longer the original word pointer
+            pop rcx
+            jmp .table_wd_loop
+
+    .token_wd_found
+        pop rcx
+        add 0x08 to rbx
+        readv rbx to rsi          ; rsi = token value
+
+        load .token_buffer
+        readv rax to rcx          ; rcx = size
+
+        shl rcx to 0x03           ; size * 8
+        add 0x08 to rax            ; skip size
+        add rcx to rax             ; destination
+
+
+        add 0x08 to rax 
+        shr rsi by 0x3C
+         
+        setv rsi to rax            ; store type
+        sub 0x08 to rax 
+
+        readv rbx to rsi
+        mov 0x00FFFFFFFFFFFFFF to rdi
+        and rdi to rsi
+        
+        setv rsi to rax            ; store token
+        add 0x08 to rax 
+
+        load .token_buffer
+        readv rax to rcx
+        add 0x02 to rcx
+        setv rcx to rax            ; size+=2
+
+        ret
+
+.parse_wd_done
+    pop rcx
+    ret
+
+
+.parse_label
+    push rdx
+    push rcx
+    readv rcx to rax
+    mov 0xFF to rsi
+    and rsi to rax
+    mov 0x2E to rsi               ; "."
+    cmp rax to rsi
+    je .label_found
+    pop rcx
+    pop rdx
+    mov 0x00 to rax
+    ret
+
+.label_found
+    load .str_array
+    readv rax to rbp              ; rbp = used bytes
+    add 0x08 to rax               ; rax = first stored string
+    mov rax to rbx                ; rbx = candidate
+    add rax to rbp                ; rbp = end of stored strings
+
+.search_loop
+    cmp rbx to rbp
+    je .new_label                 ; reached the end, not found
+
+    push rcx                      ; cmp_bytes clobbers rcx
+    mov rcx to rax                ; pointer1 = word
+    call .cmp_bytes               ; pointer2 = rbx, count = rdx
+    pop rcx
+
+    mov 0x01 to rsi
+    cmp rax to rsi
+    jne .search_next
+
+    mov rbx to rsi                ; stored string must end here too
+    add rdx to rsi
+    readv rsi to rdi
+    mov 0xFF to rsi
+    and rsi to rdi
+    mov 0x00 to rsi
+    cmp rdi to rsi
+    je .label_dup
+
+.search_next                      ; skip past this string's \0
+    readv rbx to rax
+    mov 0xFF to rsi
+    and rsi to rax
+    add 0x01 to rbx
+    mov 0x00 to rsi
+    cmp rax to rsi
+    jne .search_next
+    jmp .search_loop
+
+.label_dup                        ; reuse the old pointer
+    mov rbx to rdi
+    call .push_label_token
+    pop rcx
+    pop rdx
+    mov 0x01 to rax
+    ret
+
+.new_label
+    load .str_array
+    readv rax to rdi
+    add rdx to rdi
+    add 0x01 to rdi               ; for \0
+    setv rdi to rax               ; used += length + 1
+    add 0x08 to rax               ; skip size
+    add rdi to rax
+    sub 0x01 to rax               ; from \0
+    sub rdx to rax                ; rax = where the new string goes
+    mov rax to rdi                ; rdi = string pointer
+    call .push_label_token        ; keeps rdi
+    mov rdi to rax                ; rax = destination for the copy
+
+.insrt_label
+    readv rcx to rdi
+    setv rdi to rax
+    add 0x01 to rcx
+    add 0x01 to rax
+    sub 0x01 to rdx
+    mov 0x00 to rdi
+    cmp rdx to rdi
+    je .insrt_end
+    jmp .insrt_label
+
+.insrt_end
+    mov 0x00 to rdi               ; \0
+    setv rdi to rax
+    pop rcx                       ; the originals saved at the top
+    pop rdx
+    mov 0x01 to rax
+    ret
+
+; in:  rdi = string pointer
+; clobbers rax, rbx
+.push_label_token
+    load .token_buffer
+    readv rax to rbx              ; rbx = size (in qwords)
+    shl rbx to 0x03
+    add 0x08 to rax               ; skip size
+    add rbx to rax                ; destination
+    setv rdi to rax               ; value = string pointer
+    add 0x08 to rax
+    mov 0x33 to rbx               ; label type
+    setv rbx to rax
+    load .token_buffer
+    readv rax to rbx
+    add 0x02 to rbx
+    setv rbx to rax               ; size += 2
+    ret
+
+; in:  rax = pointer1, rbx = pointer2, rdx = byte count
+; out: rax = 1 if equal, 0 if different
+; preserves rbx, rdx. clobbers rcx, rsi, rdi
+.cmp_bytes
+    push rax
+    push rbx
+    push rdx
+
+.cmp_bytes_loop
+    mov 0x00 to rcx
+    cmp rdx to rcx
+    je .cmp_bytes_equal
+    readv rax to rsi
+    readv rbx to rdi
+    mov 0xFF to rcx
+    and rcx to rsi
+    and rcx to rdi
+    cmp rsi to rdi
+    jne .cmp_bytes_diff
+    add 0x01 to rax
+    add 0x01 to rbx
+    sub 0x01 to rdx
+    jmp .cmp_bytes_loop
+
+.cmp_bytes_equal
+    pop rdx
+    pop rbx
+    pop rax
+    mov 0x01 to rax
+    ret
+
+.cmp_bytes_diff
+    pop rdx
+    pop rbx
+    pop rax
+    mov 0x00 to rax
+    ret
+
+    
+
+; rdx = word length rcx = word pointer -> (rax bool if parsed)
+.parse_hex
+    push rdx
+    push rcx
+    mov 0x00 to rbx ; save number here
+    readv rcx to rax
+    mov 0x0000FFFF to rsi
+    and rsi to rax
+    
+    add 0x02 to rcx
+    sub 0x02 to rdx
+    mov 0x00007830 to rsi ; "0x"
+    cmp rax to rsi
+    je .hex_found
+        sub 0x02 to rcx
+        mov 0x00 to rax
+        pop rcx
+        pop rdx
+        ret
+
+.hex_found
+    mov 0xFF to rsi ; 
+    readv rcx to rax
+    and rsi to rax
+
+    sub 0x30 to rax
+    mov 0x0A to rsi
+    cmp rax to rsi
+    jl .hex_num
+        sub 0x07 to rax ; hex char
+.hex_num
+    ; Aumulator = (Aumulator << 4) + new_digit
+    shl rbx by 0x04
+    add rax to rbx
+    sub 0x01 to rdx
+    mov 0x00 to rsi
+    cmp rdx to rsi
+    je .hex_end
+
+    add 0x01 to rcx
+    jmp .hex_found
+
+.hex_end
+    load .token_buffer
+    readv rax to rcx          ; rcx = size
+    shl rcx to 0x03           ; size * 8
+    add 0x08 to rax            ; skip size
+    add rcx to rax             ; destination
+    
+    setv rbx to rax
+    add 0x08 to rax
+    mov 0x03 to rbx ; hex type
+    setv rbx to rax
+
+    load .token_buffer
+    readv rax to rcx
+    add 0x02 to rcx
+    setv rcx to rax            ; size+=2
+
+    pop rcx
+    pop rdx
+    mov 0x01 to rax
+    ret
+
+
+
+.opcodes_i
+    mem 0x00
+.generate_opcodes
+    ; read operation type
+
+.loop_gen_op
+    load .token_buffer
+    mov rax to rsi
+    readv rsi to rbx
+
+    load .opcodes_i
+    readv rax to rdx
+    shl rdx to 0x04 ; size * 16
+    shl rbx to 0x03 ; size * 16
+    add 0x08 to rsi ; skip size
+    add 0x08 to rsi ; skip value
+    add rdx to rsi
+    
+    cmp rdx to rbx
+        je .gen_ops_end
+
+
+    readv rsi to rcx ; read type
+    
+    mov 0x01 to rbx
+    cmp rbx to rcx
+    je .switch_reg_ops
+    
+    mov 0x04 to rbx
+    cmp rbx to rcx
+    je .jmp_ops
+
+    mov 0x09 to rbx
+    cmp rbx to rcx
+    je .op_brkp
+
+
+    mov 0x33 to rbx
+    cmp rbx to rcx
+    je .save_lable_pos
+
+    mov 0x05 to rbx
+    cmp rbx to rcx
+    je .data_ops
+
+    
+    jmp .loop_gen_op
+    
+.gen_ops_end
+    ret
+
+.switch_err
+    mov 0x02000001 to rax  ; exit program
+    mov 0x02 to rdi
+    syscall
+
+.data_ops                     ; rsi -> type slot of token 0
+    sub 0x08 to rsi           ; rsi -> value of token 0
+    readv rsi to rdi          ; 1 = mem, 0 = array
+    mov 0x01 to rbx
+    cmp rbx to rdi
+    je .op_mem
+    jmp .op_array
+
+; mem N: write one 8-byte value
+.op_mem
+    add 0x10 to rsi           ; value of token 1
+    readv rsi to rdx          ; rdx = the number
+    mov 0x08 to rcx
+    call .emit                ; writes 8 bytes, len += 8
+    load .opcodes_i
+    readv rax to rdx
+    add 0x02 to rdx           ; directive + number = 2 tokens
+    setv rdx to rax
+    jmp .loop_gen_op
+
+; array N: skip N*8 bytes (they stay zero)
+.op_array
+    add 0x10 to rsi
+    readv rsi to rbx          ; rbx = N
+    shl rbx to 0x03           ; N * 8
+    load .opcodes_len
+    mov rax to rdx            ; rdx = &len
+    readv rdx to rsi          ; rsi = len
+    add rbx to rsi
+    setv rsi to rdx           ; len += N*8
+    load .opcodes_i
+        readv rax to rdx
+        add 0x02 to rdx
+        setv rdx to rax
+    jmp .loop_gen_op
+
+.switch_reg_ops
+    sub 0x08 to rsi           ; rsi -> value of token 0
+    readv rsi to rdi          ; mnemonic
+
+    mov 0x89 to rbx
+    cmp rbx to rdi
+        je .op_mov
+    
+    mov 0x00000189 to rbx
+    cmp rbx to rdi
+        je .op_readv
+
+    mov 0x00000289 to rbx
+    cmp rbx to rdi
+        je .op_setv
+
+    mov 0x81 to rbx
+    cmp rbx to rdi
+        je .op_add
+
+    mov 0x29 to rbx
+    cmp rbx to rdi
+        je .op_sub
+
+    mov 0x21 to rbx
+    cmp rbx to rdi
+        je .op_and
+    
+    mov 0x9C to rbx
+    cmp rbx to rdi
+        je .op_cmp
+    
+    mov 0x09 to rbx
+    cmp rbx to rdi
+        je .op_or
+    
+    mov 0x000001C2 to rbx
+    cmp rbx to rdi
+        je .op_shl
+    
+    mov 0xC1 to rbx
+    cmp rbx to rdi
+        je .op_shrr
+
+
+    mov 0x50 to rbx
+    cmp rbx to rdi
+        je .op_push
+    
+    mov 0x58 to rbx
+    cmp rbx to rdi
+        je .op_pop
+    
+    mov 0xC3 to rbx
+    cmp rbx to rdi
+        je .op_ret
+
+    mov 0x0000050F to rbx
+    cmp rbx to rdi
+        je .op_syscall
+    
+    ; next ops go here: add, sub, and, or, cmp ...
+    jmp .switch_err
+
+.op_add
+    mov 0x00C00148 to rbp
+    jmp .alu_common
+.op_or
+    mov 0x00C80948 to rbp
+    jmp .alu_common
+.op_and
+    mov 0x00E02148 to rbp
+    jmp .alu_common
+.op_sub
+    mov 0x00E82948 to rbp
+
+.alu_common                   ; rsi -> token 0 value
+    add 0x10 to rsi
+    readv rsi to rbx          ; A (source reg or imm)
+    add 0x08 to rsi
+    readv rsi to rcx          ; type of A
+    add 0x08 to rsi
+    readv rsi to rdx          ; B (destination)
+    add 0x08 to rsi
+    readv rsi to rax          ; type of B
+
+    mov 0x02 to rdi
+    cmp rax to rdi
+    jne .switch_err           ; destination must be a register
+    mov 0x07 to rdi
+    and rdi to rdx            ; dest id
+
+    mov 0x03 to rdi
+    cmp rcx to rdi
+    je .alu_imm
+    mov 0x02 to rdi
+    cmp rcx to rdi
+    jne .switch_err
+
+; reg -> reg: 48 op modrm
+    mov 0x07 to rdi
+    and rdi to rbx
+    shl rbx to 0x03
+    mov 0xC0 to rdi
+    or rbx to rdi
+    or rdx to rdi             ; rdi = modrm
+    shl rdi to 0x10
+    mov 0xFFFF to rax
+    and rbp to rax            ; rax = 0xOP48
+    or rdi to rax
+    mov rax to rdx
+    mov 0x03 to rcx
+    call .emit
+    jmp .alu_done
+
+; reg op= imm32: 48 81 modrm imm32
+.alu_imm
+    mov rbx to rax
+    shr rax to 0x1F
+    mov 0x00 to rdi
+    cmp rax to rdi
+    jne .switch_err           ; imm must fit in 31 bits
+
+    mov rbp to rdi
+    shr rdi to 0x10
+    mov 0xFF to rax
+    and rax to rdi            ; rdi = modrm base
+    or rdx to rdi
+    shl rdi to 0x10
+    mov 0x8148 to rax
+    or rdi to rax
+    shl rbx to 0x18
+    or rbx to rax
+    mov rax to rdx
+    mov 0x07 to rcx
+    call .emit
+
+.alu_done
+    load .opcodes_i
+    readv rax to rdx
+    add 0x03 to rdx
+    setv rdx to rax
+    jmp .loop_gen_op
+
+
+.op_shrr                       ; rsi -> token 0 value
+    mov 0xE8 to rbp           ; modrm base: mod=11, /5
+    jmp .shift_common
+
+.op_shl
+    mov 0xE0 to rbp           ; modrm base: mod=11, /4
+
+.shift_common
+    add 0x10 to rsi
+    readv rsi to rbx          ; rbx = register id
+    add 0x08 to rsi
+    readv rsi to rcx          ; rcx = type of arg 1
+    add 0x08 to rsi
+    readv rsi to rdx          ; rdx = shift count
+    add 0x08 to rsi
+    readv rsi to rax          ; rax = type of arg 2
+
+    mov 0x02 to rdi
+    cmp rcx to rdi
+    jne .switch_err           ; first arg must be a register
+    mov 0x03 to rdi
+    cmp rax to rdi
+    jne .switch_err           ; second arg must be a number
+
+    mov rdx to rax
+    shr rax to 0x06           ; nonzero if count > 63
+    mov 0x00 to rdi
+    cmp rax to rdi
+    jne .switch_err
+
+    mov 0x07 to rdi
+    and rdi to rbx            ; register id 0..7
+    or rbx to rbp             ; rbp = modrm
+
+    mov rbp to rdi
+    shl rdi to 0x10           ; modrm -> byte 2
+    mov 0x0000C148 to rax     ; 48 C1
+    or rdi to rax
+    shl rdx to 0x18           ; imm8 -> byte 3
+    or rdx to rax
+    mov rax to rdx
+    mov 0x04 to rcx
+    call .emit
+
+    load .opcodes_i
+    readv rax to rdx
+    add 0x03 to rdx           ; shr + 2 args = 3 tokens
+    setv rdx to rax
+    jmp .loop_gen_op
+
+.op_cmp
+    add 0x10 to rsi
+    readv rsi to rbx          ; A -> rm
+    add 0x08 to rsi
+    readv rsi to rcx
+    add 0x08 to rsi
+    readv rsi to rdx          ; B -> reg
+    add 0x08 to rsi
+    readv rsi to rax
+
+    mov 0x02 to rdi
+    cmp rcx to rdi
+    jne .switch_err
+    cmp rax to rdi
+    jne .switch_err
+
+    mov 0x07 to rdi
+    and rdi to rbx
+    and rdi to rdx
+    shl rdx to 0x03
+    mov 0xC0 to rdi
+    or rdx to rdi
+    or rbx to rdi             ; modrm = C0 | B<<3 | A
+    shl rdi to 0x10
+    mov 0x00003948 to rax
+    or rdi to rax
+    mov rax to rdx
+    mov 0x03 to rcx
+    call .emit
+
+    load .opcodes_i
+    readv rax to rdx
+    add 0x03 to rdx
+    setv rdx to rax
+    jmp .loop_gen_op
+
+.op_readv                     ; rsi -> token 0 value (same entry as .op_mov)
+    add 0x10 to rsi
+    readv rsi to rbx          ; rbx = A (address register id)
+    add 0x08 to rsi
+    readv rsi to rcx          ; rcx = type of A
+    add 0x08 to rsi
+    readv rsi to rdx          ; rdx = B (destination register id)
+    add 0x08 to rsi
+    readv rsi to rax          ; rax = type of B
+
+    mov 0x02 to rdi           ; both must be registers
+    cmp rcx to rdi
+    jne .switch_err
+    cmp rax to rdi
+    jne .switch_err
+
+    mov 0x07 to rdi
+    and rdi to rbx            ; address id 0..7
+    and rdi to rdx            ; dest id 0..7
+
+    shl rdx to 0x03           ; dest -> reg field
+    mov 0x40 to rdi           ; mod = 01 (disp8)
+    or rdx to rdi
+    or rbx to rdi             ; rdi = modrm
+
+    mov 0x04 to rax           ; address register is rsp?
+    cmp rbx to rax
+    je .readv_sib
+
+; 48 8B modrm 00   (4 bytes)
+    shl rdi to 0x10
+    mov 0x00008B48 to rax
+    or rdi to rax
+    mov rax to rdx
+    mov 0x04 to rcx
+    call .emit
+    jmp .readv_done
+
+; 48 8B modrm 24 00   (5 bytes, SIB for rsp)
+.readv_sib
+    shl rdi to 0x10
+    mov 0x00008B48 to rax
+    or rdi to rax
+    mov 0x24 to rdx
+    shl rdx to 0x18
+    or rdx to rax             ; SIB byte at byte 3, disp8 = 0 at byte 4
+    mov rax to rdx
+    mov 0x05 to rcx
+    call .emit
+
+.readv_done
+    load .opcodes_i
+    readv rax to rdx
+    add 0x03 to rdx           ; readv + 2 args = 3 tokens
+    setv rdx to rax
+    jmp .loop_gen_op
+
+
+.op_setv                      ; rsi -> token 0 value
+    add 0x10 to rsi
+    readv rsi to rbx          ; rbx = A (value register id)
+    add 0x08 to rsi
+    readv rsi to rcx          ; rcx = type of A
+    add 0x08 to rsi
+    readv rsi to rdx          ; rdx = B (address register id)
+    add 0x08 to rsi
+    readv rsi to rax          ; rax = type of B
+
+    mov 0x02 to rdi           ; both must be registers
+    cmp rcx to rdi
+    jne .switch_err
+    cmp rax to rdi
+    jne .switch_err
+
+    mov 0x07 to rdi
+    and rdi to rbx            ; value id 0..7
+    and rdi to rdx            ; address id 0..7
+
+    shl rbx to 0x03           ; value -> reg field
+    mov 0x40 to rdi           ; mod = 01 (disp8)
+    or rbx to rdi
+    or rdx to rdi             ; rdi = modrm
+
+    mov 0x04 to rax           ; address register is rsp?
+    cmp rdx to rax
+    je .setv_sib
+
+; 48 89 modrm 00   (4 bytes)
+    shl rdi to 0x10
+    mov 0x00008948 to rax
+    or rdi to rax
+    mov rax to rdx
+    mov 0x04 to rcx
+    call .emit
+    jmp .setv_done
+
+; 48 89 modrm 24 00   (5 bytes, SIB for rsp)
+.setv_sib
+    shl rdi to 0x10
+    mov 0x00008948 to rax
+    or rdi to rax
+    mov 0x24 to rdx
+    shl rdx to 0x18
+    or rdx to rax             ; SIB at byte 3, disp8 = 0 at byte 4
+    mov rax to rdx
+    mov 0x05 to rcx
+    call .emit
+
+.setv_done
+    load .opcodes_i
+    readv rax to rdx
+    add 0x03 to rdx           ; setv + 2 args = 3 tokens
+    setv rdx to rax
+    jmp .loop_gen_op
+
+.op_mov                       ; rsi -> token 0 value
+    add 0x10 to rsi
+    readv rsi to rbx          ; rbx = A (source reg or immediate)
+    add 0x08 to rsi
+    readv rsi to rcx
+
+    add 0x08 to rsi
+    readv rsi to rdx          ; rdx = B (destination)
+    add 0x08 to rsi
+    readv rsi to rax
+
+    mov 0x02 to rdi
+    cmp rax to rdi
+    jne .switch_err           ; destination must be a register
+
+    mov 0x07 to rdi
+    and rdi to rdx            ; rdx = dest id 0..7
+
+    mov 0x03 to rdi
+    cmp rcx to rdi
+    
+    je .mov_imm               ; A is a hex number
+
+; reg -> reg:  48 89 /r
+    mov 0x07 to rdi
+    and rdi to rbx            ; src id
+    shl rbx to 0x03
+    mov 0xC0 to rdi           ; mod = 11
+    or rbx to rdi
+    or rdx to rdi             ; rdi = modrm
+    shl rdi to 0x10
+    mov 0x00008948 to rax
+    or rdi to rax             ; bytes: 48 89 modrm
+    mov rax to rdx
+    mov 0x03 to rcx
+    call .emit
+        load .opcodes_i
+        readv rax to rdx
+        add 0x03 to rdx
+        setv rdx to rax
+    jmp .loop_gen_op
+
+.mov_imm                      ; rbx = imm, rdx = dest id
+    mov rbx to rax
+    shr rax to 0x1F           ; nonzero if imm > 0x7FFFFFFF
+    mov 0x00 to rdi
+    cmp rax to rdi
+    jne .mov_imm64
+
+    ; small: 48 C7 /0 imm32 (7 bytes)
+        mov 0xC0 to rdi
+        or rdx to rdi
+        shl rdi to 0x10           ; modrm = C0 | dst
+        mov 0xC748 to rax
+        or rdi to rax
+        shl rbx to 0x18           ; imm32 in bytes 3..6
+        or rbx to rax
+        mov rax to rdx
+        mov 0x07 to rcx
+        call .emit
+            load .opcodes_i
+            readv rax to rdx
+            add 0x03 to rdx
+            setv rdx to rax
+        jmp .loop_gen_op
+
+; large: 48 B8+dst imm64 (10 bytes)
+.mov_imm64
+    shl rdx to 0x08
+    mov 0xB848 to rax
+    add rdx to rax            ; 48, B8+dst
+    mov rax to rdx
+    mov 0x02 to rcx
+    push rbx
+    call .emit
+    pop rdx
+    mov 0x08 to rcx
+    call .emit
+        load .opcodes_i
+        readv rax to rdx
+        add 0x03 to rdx
+        setv rdx to rax
+    jmp .loop_gen_op
+
+.op_push
+    add 0x10 to rsi
+    readv rsi to rdx
+    add 0x50 to rdx
+    mov 0x01 to rcx
+    call .emit
+        load .opcodes_i
+        readv rax to rdx
+        add 0x02 to rdx
+        setv rdx to rax
+    jmp .loop_gen_op
+
+.op_pop
+    add 0x10 to rsi
+    readv rsi to rdx
+    add 0x58 to rdx
+    mov 0x01 to rcx
+    call .emit
+        load .opcodes_i
+        readv rax to rdx
+        add 0x02 to rdx
+        setv rdx to rax
+    jmp .loop_gen_op
+
+
+.op_ret
+    mov 0x000000C3 to rdx
+    mov 0x01 to rcx
+    call .emit
+        load .opcodes_i
+        readv rax to rdx
+        add 0x01 to rdx
+        setv rdx to rax
+    jmp .loop_gen_op
+
+.op_syscall
+    mov 0x0000050F to rdx
+    mov 0x02 to rcx
+    call .emit
+        load .opcodes_i
+        readv rax to rdx
+        add 0x01 to rdx
+        setv rdx to rax
+    jmp .loop_gen_op
+
+.op_brkp
+    mov 0x0000CCCC to rdx
+    mov 0x01 to rcx
+    call .emit
+        load .opcodes_i
+        readv rax to rdx
+        add 0x01 to rdx
+        setv rdx to rax
+    jmp .loop_gen_op
+
+
+.jmp_ops                      ; rsi -> type slot of token 0
+    sub 0x08 to rsi           ; rsi -> value of token 0 (opcode bytes)
+    readv rsi to rdx          ; rdx = opcode payload
+    mov rsi to rdi            ; keep the token pointer across .emit
+
+    ; choose the opcode byte count
+    mov 0x02 to rcx           ; default: 2 bytes (je, jne: 0F 8x)
+
+    mov 0x00058D48 to rbx
+    cmp rbx to rdx
+    jne .jo_not_load
+    mov 0x03 to rcx           ; load: 48 8D 05
+    jmp .jo_emit_op
+
+.jo_not_load
+    mov 0xE9 to rbx
+    cmp rbx to rdx
+    je .jo_one_byte           ; jmp: E9
+    mov 0xE8 to rbx
+    cmp rbx to rdx
+    jne .jo_emit_op           ; not call either, keep 2 bytes
+.jo_one_byte
+    mov 0x01 to rcx           ; jmp / call: 1 byte
+
+.jo_emit_op
+    call .emit                ; writes the opcode bytes, len += rcx
+
+    ; token 1 must be a label
+    mov rdi to rsi
+    add 0x10 to rsi
+    add 0x08 to rsi           ; type slot of token 1
+    readv rsi to rdx
+    mov 0x33 to rbx
+    cmp rbx to rdx
+    jne .switch_err           ; only labels are supported for now
+
+    ; add an entry to .jmp_table: pos, label id
+    load .jmp_table
+    readv rax to rdi          ; rdi = size
+    add 0x08 to rdi           ; skip the size cell
+    add rdi to rax            ; rax = address of the new entry
+    mov rax to rdi            ; rdi = entry pointer
+    load .opcodes_len
+    readv rax to rbx          ; rbx = position right after the opcode
+    setv rbx to rdi           ; entry.pos
+
+    sub 0x08 to rsi           ; value slot of token 1 (label id)
+    readv rsi to rdx
+    add 0x08 to rdi
+    setv rdx to rdi           ; entry.id
+
+    ; 4 placeholder bytes, patched later by the linker
+    mov 0x00 to rdx
+    mov 0x04 to rcx
+    call .emit
+
+    load .jmp_table
+    readv rax to rdi
+    add 0x10 to rdi
+    setv rdi to rax           ; size += 16
+
+    load .opcodes_i
+    readv rax to rdx
+    add 0x02 to rdx           ; mnemonic + label = 2 tokens
+    setv rdx to rax
+    jmp .loop_gen_op
+
+
+.save_lable_pos
+    sub 0x08 to rsi ; label id value
+
+    load .label_pos
+    readv rax to rdi ; size
+    add 0x08 to rdi ; skip size
+    add rdi to rax
+
+    mov rax to rdi 
+
+    load .opcodes_len
+    readv rax to rbx
+    setv rbx to rdi ; save position current
+    add 0x08 to rdi
+    readv rsi to rbx
+    setv rbx to rdi ; save label id
+    ; saved pos, label_id
+
+    load .label_pos
+    readv rax to rdi ; size
+    add 0x10 to rdi
+    setv rdi to rax
+
+
+    load .opcodes_i
+    readv rax to rdx
+    add 0x01 to rdx ; label
+    setv rdx to rax
+    
+    jmp .loop_gen_op
+
+.emit
+    load .opcodes_len
+    
+    mov rax to rbx            ; rbx = &len
+    readv rbx to rsi          ; rsi = len
+    load .opcodes_buf
+    add rsi to rax            ; rax = destination
+    setv rdx to rax           ; writes 8 bytes, the extra ones get overwritten by the next emit
+    add rcx to rsi
+    setv rsi to rbx           ; len += count
+    ret
+
+
+.linking_stage
+    ; iterate jmp_table
+    ; get address from lable_pos table
+    ; set address instead of 00 00 00 00
+    mov 0x08 to rcx  ; index ; go to first value
+    
+.link_loop
+    load .jmp_table
+    add 0x08 to rax ; skip size
+    add rcx to rax
+    readv rax to rbx ; label_id
+    
+    mov 0x00 to rdx  ; index label_pos; go to first value
+    sub 0x08 to rdx
+.label_link_loop
+    add 0x10 to rdx
+    load .label_pos
+    readv rax to rdi
+    add 0x08 to rdi
+    cmp rdx to rdi
+    je .link_err
+
+    add 0x08 to rax  ; skip size
+    add rdx to rax
+    readv rax to rdi
+
+    cmp rbx to rdi ; cmp labels in tables
+    jne .label_link_loop
+
+    sub 0x08 to rax ; back to pos
+    readv rax to rsi ; label actuall pos in code
+
+    
+    ; found match
+    load .jmp_table
+    add 0x08 to rax ; skip size
+    add rcx to rax
+    sub 0x08 to rax ; back to pos
+
+    readv rax to rdx ; pos where to change
+
+    load .opcodes_buf
+    add rdx to rax   ; cahnge 4 bytes here
+
+    add 0x04 to rax ; skip jmp+4bytes opcode
+    readv rax to rdi ; save for later
+    sub 0x04 to rax
+    sub rdx to rsi
+    sub 0x04 to rsi
+    setv rsi to rax
+    add 0x04 to rax
+
+    setv rdi to rax ; 4 bytes written withou changing later 4 bytes
+
+    add 0x10 to rcx
+    load .jmp_table
+    readv rax to rdi ; size
+    add 0x08 to rdi
+    cmp rcx to rdi
+    je .link_over
+
+    jmp .link_loop
+.link_over
+    ret
+
+.link_err
+    mov 0x02000001 to rax  ; exit program
+    mov 0x03 to rdi
+    syscall
+
+
+; rdi - filename ; rsi - buffer ; rdx - number bytes
+.write_to_file
+    push rdi
+    push rsi
+    push rdx                 ; preserve desired file size
+
+
+    ; open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0644)
+    mov 0x02000005 to rax
+    mov 0x00000241 to rsi
+    mov 0x000001A4 to rdx
+    syscall
+
+    ; rax = file descriptor
+    mov rax to rdi
+
+    ; write(fd, buffer, desired_size)
+    mov 0x02000004 to rax
+    pop rdx                  ; requested total size
+    pop rsi                  ; source buffer
+    push rdx                 ; save desired size for ftruncate
+    syscall
+
+    ; rax = bytes actually written
+    ; Set file length to desired size; missing tail becomes zeroes.
+    pop rsi                  ; desired total size
+    mov 0x020000C9 to rax    ; macOS SYS_ftruncate = 201         ; SYS_ftruncate = 77
+    syscall                  ; ftruncate(fd, desired_size)
+
+
+    ; close(fd)
+    mov 0x02000006 to rax
+    syscall
+
+    pop rdi
+    mov 0x0200000F to rax      ; sys_chmod
+    mov 0x1ED to rsi    ; mode 0755 (octal) = 493 decimal
+    syscall
+    ret
+
+.file_desc
+    mem 0x00
+
+.first_arg
+    mem 0x00
+
+.second_arg
+    mem 0x00
+
+.save_rsp
+    mem 0x00
+
+.in_buffer
+    array 0x00000600
+
+.token_table
+    mem 0x000000000000003B ; ; 'key' 
+    mem 0x0000000000000001 ; count
+    mem 0x9000000000000099 ; value '99'
+
+
+    mem 0x00000000706B7262 ; brkp 'key' 
+    mem 0x0000000000000004 ; mask
+    mem 0x9000000000000088 ; value '88'
+
+    mem 0x0000000000766F6D ; mov 'key' 
+    mem 0x0000000000000003 ; count
+    mem 0x1000000000000089 ; value '89'
+
+    mem 0x0000007664616572 ; readv 'key' 
+    mem 0x0000000000000005 ; count
+    mem 0x1000000000000189 ; value '189'
+
+    mem 0x0000000076746573 ; setv 'key' 
+    mem 0x0000000000000004 ; count
+    mem 0x1000000000000289 ; value '189'
+
+    mem 0x0000000000646461 ; add 'key' 
+    mem 0x0000000000000003 ; count
+    mem 0x1000000000000081 ; value '81'
+
+    mem 0x0000000000726873 ; shr 'key' 
+    mem 0x0000000000000003 ; count
+    mem 0x10000000000000C1 ; value '81'
+
+    mem 0x00000000006C6873 ; shl 'key' 
+    mem 0x0000000000000003 ; count
+    mem 0x10000000000001C2 ; value '81'
+
+    mem 0x0000000000627573 ; sub 'key' 
+    mem 0x0000000000000003 ; count
+    mem 0x1000000000000029 ; valu '21'
+
+    mem 0x0000000000646E61 ; and 'key' 
+    mem 0x0000000000000003 ; count
+    mem 0x1000000000000021 ; value '21'
+
+    mem 0x0000000000706D63 ; cmp 'key' 
+    mem 0x0000000000000003 ; count
+    mem 0x100000000000009C ; value '9C'
+
+    mem 0x000000000000726F ; or 'key' 
+    mem 0x0000000000000002 ; count
+    mem 0x1000000000000009 ; value '21'
+
+    mem 0x0000000000786172  ; "rax "
+    mem 0x0000000000000003 ; count
+    mem 0x2000000000000000  ; ID=0, REX.B=0, REX.R=0 -> Value: 0x00
+    
+    mem 0x0000000000786372  ; "rcx "
+    mem 0x0000000000000003 ; count
+    mem 0x2000000000000001  ; ID=1, REX.B=0, REX.R=0 -> Value: 0x01
+    
+    mem 0x0000000000786472  ; "rdx "
+    mem 0x0000000000000003 ; count
+    mem 0x2000000000000002  ; ID=2, REX.B=0, REX.R=0 -> Value: 0x02
+    
+    mem 0x0000000000786272  ; "rbx "
+    mem 0x0000000000000003 ; count
+    mem 0x2000000000000003  ; ID=3, REX.B=0, REX.R=0 -> Value: 0x03
+    
+    mem 0x0000000000707372  ; "rsp "
+    mem 0x0000000000000003  ; count
+    mem 0x2000000000000004  ; ID=4
+    mem 0x0000000000706272  ; "rbp "
+    mem 0x0000000000000003  ; count
+    mem 0x2000000000000005  ; ID=5
+
+    mem 0x0000000000697372  ; "rsi "
+    mem 0x0000000000000003  ; count
+    mem 0x2000000000000006  ; ID=6
+    mem 0x0000000000696472  ; "rdi "
+    mem 0x0000000000000003  ; count
+    mem 0x2000000000000007  ; ID=7
+
+    mem 0x0000000068737570 ; "push "
+    mem 0x0000000000000004 ; count
+    mem 0x1000000000000050 ; 
+
+    mem 0x0000000000706F70 ; "pop "
+    mem 0x0000000000000003 ; count
+    mem 0x1000000000000058 ; 
+
+    mem 0x006C6C6163737973 ; "syscall"
+    mem 0x0000000000000007 ; count
+    mem 0x100000000000050F ; type
+
+    mem 0x000000000000656A ; "je "
+    mem 0x0000000000000002 ; count
+    mem 0x400000000000840F ; type
+
+    mem 0x0000000000006C6A ; "jl"
+    mem 0x0000000000000002 ; count = 2
+    mem 0x4000000000008C0F ; opcode bytes: 0F 8C
+
+    mem 0x0000000000656C6A ; "jle"
+    mem 0x0000000000000003 ; count = 3
+    mem 0x4000000000008E0F ; opcode bytes: 0F 8E
+    
+    mem 0x0000000000656E6A ; "jne "
+    mem 0x0000000000000003 ; count
+    mem 0x400000000000850F ; type
+
+    mem 0x0000000000706D6A ; "jmp "
+    mem 0x0000000000000003 ; count
+    mem 0x40000000000000E9 ; type
+
+    mem 0x000000006C6C6163 ; "call "
+    mem 0x0000000000000004 ; count
+    mem 0x40000000000000E8 ; type
+
+    mem 0x0000000064616F6C ; "load "
+    mem 0x0000000000000004 ; count
+    mem 0x4000000000058D48 ; type
+
+    mem 0x0000007961727261 ; "array "
+    mem 0x0000000000000005 ; count
+    mem 0x5000000000000000 ; type
+
+    mem 0x00000000006D656D ; "mem "
+    mem 0x0000000000000003 ; count
+    mem 0x5000000000000001 ; type
+
+    mem 0x0000000000746572 ; "ret "
+    mem 0x0000000000000003 ; count
+    mem 0x10000000000000C3 ; type
+
+    mem 0xFFFFFFFFFFFFFFFF ; data end
+    mem 0xFFFFFFFFFFFFFFFF ; data end
+    mem 0xFFFFFFFFFFFFFFFF ; data end
+
+
+.reset_token_buf
+    push rax
+    push rdx
+    load .token_buffer
+    mov 0x00 to rdx
+    setv rdx to rax
+    pop rdx
+    pop rax
+    
+    ret
+    
+
+.token_buffer
+    mem 0x0000000000000000
+    array 0x00000300
+
+.str_array ; change to heap later
+    mem 0x0000000000000000
+    array 0x00000500
+
+.jmp_table
+    ; addres of jmp, name ; change to heap later
+    mem 0x0000000000000000 ; size
+    array 0x00000500
+
+.label_pos
+    ; label, address ; change to heap later
+    mem 0x0000000000000000 ; size
+    array 0x00001500
+
+.opcodes_len
+    mem 0x00
+
+
+.macho_header
+    mem 0x01000007FEEDFACF ; magic + x86-64 CPU type
+    mem 0x0000000280000003 ; subtype=0x80000003, filetype=MH_EXECUTE
+    mem 0x0000014800000003 ; ncmds=3, sizeofcmds=0x148
+    mem 0x0000000000000001 ; flags=MH_NOUNDEFS, reserved=0
+
+.pagezero
+    mem 0x0000004800000019 ; LC_SEGMENT_64, cmdsize=72
+    mem 0x455A454741505F5F ; "__PAGEZE"
+    mem 0x0000000000004F52 ; "RO"
+    mem 0x0000000000000000 ; vmaddr = 0
+    mem 0x0000000100000000 ; vmsize = 4 GiB
+    mem 0x0000000000000000 ; fileoff = 0
+    mem 0x0000000000000000 ; filesize = 0
+    mem 0x0000000000000000 ; maxprot=0, initprot=0
+    mem 0x0000000000000000 ; nsects=0, flags=0
+
+.text_segment
+    mem 0x0000004800000019 ; LC_SEGMENT_64, cmdsize=72
+    mem 0x0000545845545F5F ; "__TEXT"
+    mem 0x0000000000000000
+    mem 0x0000000100000000 ; vmaddr = 0x100000000
+    mem 0x0000000000000000 ; vmsize: PATCH at file offset 0x88
+    mem 0x0000000000000000 ; fileoff = 0
+    mem 0x0000000000000000 ; filesize: PATCH at file offset 0x98
+    mem 0x0000000700000007 ; maxprot=7, initprot=7
+    mem 0x0000000000000000 ; nsects=0, flags=0
+
+.unix_thread
+    mem 0x000000B800000005 ; LC_UNIXTHREAD, cmdsize=184
+    mem 0x0000002A00000004 ; flavor=4, count=42
+
+    ; x86_64 thread state: 16 general-purpose registers
+    mem 0x0000000000000000 ; rax
+    mem 0x0000000000000000 ; rbx
+    mem 0x0000000000000000 ; rcx
+    mem 0x0000000000000000 ; rdx
+    mem 0x0000000000000000 ; rdi
+    mem 0x0000000000000000 ; rsi
+    mem 0x0000000000000000 ; rbp
+    mem 0x0000000000000000 ; rsp
+    mem 0x0000000000000000 ; r8
+    mem 0x0000000000000000 ; r9
+    mem 0x0000000000000000 ; r10
+    mem 0x0000000000000000 ; r11
+    mem 0x0000000000000000 ; r12
+    mem 0x0000000000000000 ; r13
+    mem 0x0000000000000000 ; r14
+    mem 0x0000000000000000 ; r15
+
+    mem 0x0000000100000168 ; rip: entry point
+    mem 0x0000000000000000 ; rflags
+    mem 0x0000000000000000 ; cs
+    mem 0x0000000000000000 ; fs
+    mem 0x0000000000000000 ; gs
+
+
+.opcodes_buf
+    array 0x00003000 ; final array have more room beacuse of p_memsz

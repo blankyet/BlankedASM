@@ -1,0 +1,21 @@
+.main
+    ; Load string address into rsi
+    load .msg            ; rax = address of .msg
+    mov rax to rsi       ; rsi = buffer address
+
+    ; sys_write (fd=1, buf=rsi, count=14)
+    mov 0x02000004 to rax      ; syscall number for sys_write
+    mov 0x01 to rdi      ; fd = 1 (stdout)
+    mov 0x0E to rdx      ; length = 14 bytes
+    syscall
+
+    ; sys_exit (code=0)
+    mov 0x02000001 to rax      ; syscall number for sys_exit
+    mov 0x00 to rdi      ; exit code 0
+    syscall
+
+.msg
+    ; "Hello, W" (Little-endian hex)
+    mem 0x57202C6F6C6C6548 
+    ; "orld!\n\0\0"
+    mem 0x00000A21646C726F
